@@ -1,0 +1,11 @@
+Examples:
+  append.lf       : Appending lists of natural numbers.
+  reverse.lf      : Reversing lists of natural numbers.
+  lambda.lf       : Evaluation and typing of the STLC.
+  lists.lf        : An encoding of polymorphic lists.
+  miniml.lf       : Evaluation and typing of Mini-ML.
+  miniml-typed.lf : Evaluation and typing of Mini-ML; expressions are indexed
+                    by their type.
+  nat.lf          : The natural numbers and even numbers.
+  num.lf          : Rewriting arithmetic expressions to a normal form.
+  ski.lf          : Translation of lambda terms to SKI combinators.

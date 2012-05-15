@@ -1,0 +1,32 @@
+nat : type.
+z : nat.
+s : nat -> nat.
+
+list : type.
+nil : list.
+cons : nat -> list -> list.
+
+append : list -> list -> list -> type.
+
+append_nil : {L : list} append nil L L.
+append_cons :
+  {X : nat}{L : list}{K : list}{M : list}
+  append (cons X L) K (cons X M)
+    <- append L K M.
+
+reverse : list -> list -> type.
+
+reverse_nil : reverse nil nil.
+reverse_cons :
+  {H : nat}{Rest : list}{Ans : list}{L : list}
+  reverse (cons H Rest) Ans
+    <- reverse Rest L
+    <- append L (cons H nil) Ans.
+
+%solve rev30 :
+  reverse
+    (cons z (cons z (cons z (cons z (cons z (cons z (cons z (cons z (cons z (cons z
+      (cons z (cons z (cons z (cons z (cons z (cons z (cons z (cons z (cons z (cons z
+      (cons z (cons z (cons z (cons z (cons z (cons z (cons z (cons z (cons z (cons z
+    nil))))))))))))))))))))))))))))))
+  A.

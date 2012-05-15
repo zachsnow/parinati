@@ -1,0 +1,95 @@
+% Abstract Syntax.
+exp : type.
+
+z : exp.
+s : exp -> exp.
+
+case : exp -> exp -> (exp -> exp) -> exp.
+
+pair : exp -> exp -> exp.
+fst : exp -> exp.
+snd : exp -> exp.
+
+lam : (exp -> exp) -> exp.
+app : exp -> exp -> exp.
+
+letv : exp -> (exp -> exp) -> exp.
+letn : exp -> (exp -> exp) -> exp.
+fix : (exp -> exp) -> exp.
+
+% Evaluation.
+eval : exp -> exp -> type.
+
+eval-z : eval z z.
+eval-s : {E : exp}{V : exp} eval (s E) (s V) <- eval E V.
+eval-case-z :
+  {E1 : exp}{E2 : exp}{E3 : exp -> exp}{V : exp}
+  eval (case E1 E2 E3) V <- eval E1 z <- eval E2 V.
+eval-case-s :
+  {E1 : exp}{E2 : exp}{E3 : exp -> exp}{V : exp}{V' : exp}
+  eval (case E1 E2 E3) V <- eval E1 (s V') <- eval (E3 V') V.
+eval-pair :
+  {E1 : exp}{E2 : exp}{V1 : exp}{V2 : exp}
+  eval (pair E1 E2) (pair V1 V2) <- eval E1 V1 <- eval E2 V2.
+eval-fst :
+  {E : exp}{V1 : exp}{V2 : exp}
+  eval (fst E) V1 <- eval E (pair V1 V2).
+eval-snd :
+  {E : exp}{V1 : exp}{V2 : exp}
+  eval (snd E) V2 <- eval E (pair V1 V2).
+eval-lam : {E : exp -> exp} eval (lam E) (lam E).
+eval-app:
+  {E1 : exp}{E2 : exp}{E1' : exp -> exp}{V1 : exp}{V2 : exp}
+  eval (app E1 E2) V1 <- eval E1 (lam E1') <- eval E2 V2 <- eval (E1' V2) V1.
+eval-letv :
+  {E1 : exp}{E2 : exp -> exp}{V1 : exp}{V2 : exp}
+  eval (letv E1 E2) V2 <- eval E1 V1 <- eval (E2 V1) V2.
+eval-letn :
+  {E1 : exp}{E2 : exp -> exp}{V : exp}
+  eval (letn E1 E2) V <- eval (E2 E1) V.
+eval-fix :
+  {E : exp -> exp}{V : exp}
+  eval (fix E) V <- eval (E (fix E)) V.
+
+% Examples.
+%solve test-z : eval z V.
+%solve test-s : eval (s z) V.
+%solve test-pairs : eval (fst (pair (snd (pair z (s z))) (s (s z)))) V.
+%solve test-let : eval (letv (s z) ([x : exp] s x)) V.
+%solve test-double :
+  eval
+    (app
+      (fix ([f : exp] (lam ([x : exp] (case x z ([v : exp] (s (s (app f v)))))))))
+      (s (s (s z))))
+    V.
+
+%solve test-sum-7 :
+  eval
+    (letv
+      (fix ([f : exp] (lam ([x  : exp] (lam ([y : exp]
+        (case y
+          x
+          ([v : exp] (app (app f (s x)) v)))))))))
+      ([plus : exp]
+        (app
+          (fix ([f : exp] (lam ([x : exp]
+            (case x
+              z
+              ([v : exp] (app (app plus x) (app f v))))))))
+          (s (s (s (s (s (s (s z))))))))))
+    V.
+%solve test-sum-10 :
+  eval
+    (letv
+      (fix ([f : exp] (lam ([x  : exp] (lam ([y : exp]
+        (case y
+          x
+          ([v : exp] (app (app f (s x)) v)))))))))
+      ([plus : exp]
+        (app
+          (fix ([f : exp] (lam ([x : exp]
+            (case x
+              z
+              ([v : exp] (app (app plus x) (app f v))))))))
+          (s (s (s (s (s (s (s (s (s (s z)))))))))))))
+    V.

@@ -1,0 +1,3 @@
+echo Cleaning...
+rm *.o *.cm*
+echo Done.

@@ -1,0 +1,60 @@
+i : type.
+form : type.
+true : form -> type.
+
+and : form -> form -> form.
+imp : form -> form -> form.
+all : (i -> form) -> form.
+
+and_i :
+  pi A : form.
+  pi B : form.
+  (true A) -> (true B) -> (true (and A B)).
+
+and_e_l :
+  pi A : form.
+  pi B : form.
+  (true (and A B)) -> (true A).
+
+and_e_r :
+  pi A : form.
+  pi B : form.
+  (true (and A B)) -> (true B).
+
+imp_i :
+  pi A : form.
+  pi B : form.
+  ((true A) -> (true B)) -> (true (imp A B)).
+
+imp_e :
+  pi A : form.
+  pi B : form.
+  (true (imp A B)) -> (true A) -> (true B).
+
+all_i :
+  pi A : i -> form.
+  (pi y : i. true (A y)) -> (true (all A)).
+
+all_e :
+  pi A : (i -> form).
+  pi t : i.
+  (true (all A)) -> (true (A t)).
+
+hoist :
+  pi A : (i -> form).
+  pi B : (i -> form).
+  (true (and (all A) (all B))) ->
+  (true (all (\x : i. (and (A x) (B x))))).
+
+judgment hoist =
+  \A : (i -> form).
+  \B : (i -> form).
+  \p : (true (and (all A) (all B))).
+  (all_i
+    (\x : i. (and (A x) (B x)))
+    (\x : i.
+      (imp_i (A x) (B x)
+        (all_e A x (and_e_l (all A) (all B) p))
+        (all_e B x (and_e_r (all A) (all B) p)))))
+  : hoist.
+

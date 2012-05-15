@@ -1,0 +1,111 @@
+num : type.
+plus : num -> num -> num.
+
+zero : num.
+one : num.
+prop : type.
+equal : num -> num -> prop.
+
+pf : prop -> type.
+
+refl : {N:num} pf (equal N N).
+symm : {N1:num} {N2:num} pf (equal N1 N2) -> pf (equal N2 N1).
+trans :
+   {N1:num} {N2:num} {N3:num} pf (equal N1 N2) -> pf (equal N2 N3) -> pf (equal N1 N3).
+
+plus_assoc :
+  {N1:num} {N2:num} {N3:num} pf (equal (plus (plus N1 N2) N3) (plus N1 (plus N2 N3))).
+plus_comm : {N1:num} {N2:num} pf (equal (plus N1 N2) (plus N2 N1)).
+plus_zero : {N1:num} pf (equal (plus N1 zero) N1).
+plus_cong :
+  {N1:num} {N1':num} {N2:num} {N2':num}
+    pf (equal N1 N1') -> pf (equal N2 N2') -> pf (equal (plus N1 N2) (plus N1' N2')).
+plus_elim1 :
+  {N1:num} {N2:num} {N2':num} pf (equal (plus N1 N2) (plus N1 N2')) -> pf (equal N2 N2').
+
+mklist : {A:num} {B:num} pf (equal A B) -> type.
+mklist-swap :
+  {A:num} {B:num} {C:num} {D:num} {Pf:pf (equal (plus (plus A B) C) D)}
+    mklist (plus (plus A B) C) D Pf
+      -> mklist (plus A (plus B C)) D
+          (trans (plus A (plus B C)) (plus (plus A B) C) D
+          (symm (plus (plus A B) C) (plus A (plus B C)) (plus_assoc A B C)) Pf).
+mklist-step :
+   {A:num} {B:num} {Pf:pf (equal A B)} {C:num}
+      mklist A B Pf -> mklist (plus A C) (plus B C) (plus_cong A B C C Pf (refl C)).
+mklist-stop : {A:num} mklist A A (refl A).
+
+%solve test :
+  mklist
+  (plus
+    (plus
+      (plus
+        (plus
+          (plus zero one)
+          (plus zero one)
+        )
+        (plus
+          (plus zero one)
+          (plus zero one)
+        )
+      )
+      (plus
+        (plus
+          (plus zero one)
+          (plus zero one)
+        )
+        (plus
+          (plus zero one)
+          (plus zero one)
+        )
+      )
+    )
+    (plus
+      (plus
+        (plus
+          (plus
+            (plus zero one)
+            (plus zero one)
+          )
+          (plus
+            (plus zero one)
+            (plus zero one)
+          )
+        )
+        (plus
+          (plus
+            (plus zero one)
+            (plus zero one)
+          )
+          (plus
+            (plus zero one)
+            (plus zero one)
+          )
+        )
+      )
+      (plus
+        (plus
+          (plus
+            (plus zero one)
+            (plus zero one)
+          )
+          (plus
+            (plus zero one)
+            (plus zero one)
+          )
+        )
+        (plus
+          (plus
+            (plus zero one)
+            (plus zero one)
+          )
+          (plus
+            (plus zero one)
+            (plus zero one)
+          )
+        )
+      )
+    )
+  )
+  Ops Proof.
+ 

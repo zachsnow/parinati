@@ -1,0 +1,28 @@
+nat : type.
+z : nat.
+s : nat -> nat.
+
+list : type.
+nil : list.
+cons : nat -> list -> list.
+
+append : list -> list -> list -> type.
+
+append_nil : {L : list} append nil L L.
+append_cons :
+  {X : nat}{L : list}{K : list}{M : list}
+  append L K M ->
+    append (cons X L) K (cons X M).
+
+%solve t1 :
+  append
+    A
+    B
+    (cons z (cons (s z) (cons (s (s z)) nil))).
+
+%solve t2 :
+  append
+    (cons z nil)
+    B
+    (cons z (cons (s z) (cons (s (s z)) nil))).
+

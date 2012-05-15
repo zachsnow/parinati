@@ -1,0 +1,31 @@
+tp : type.
+arrow : tp -> tp -> tp.
+unit : tp.
+
+tm : type.
+empty : tm.
+app : tm -> tm -> tm.
+lam : tp -> (tm -> tm) -> tm.
+
+of : tm -> tp -> type.
+of-empty : of empty unit.
+of-lam :
+   {T2:tp} {E:tm -> tm} {T:tp}
+      ({x:tm} of x T2 -> of (E x) T) -> of (lam T2 ([x:tm] E x)) (arrow T2 T).
+of-app :
+   {E2:tm} {T2:tp} {E1:tm} {T:tp}
+      of E2 T2 -> of E1 (arrow T2 T) -> of (app E1 E2) T.
+
+value : tm -> type.
+value-empty : value empty.
+value-lam : {T:tp} {E:tm -> tm} value (lam T ([x:tm] E x)).
+
+step : tm -> tm -> type.
+step-app-1 :
+   {E1:tm} {E1':tm} {E2:tm} step E1 E1' -> step (app E1 E2) (app E1' E2).
+step-app-2 :
+   {E2:tm} {E2':tm} {E1:tm}
+      step E2 E2' -> value E1 -> step (app E1 E2) (app E1 E2').
+step-app-beta :
+   {E2:tm} {T2:tp} {E:tm -> tm}
+      value E2 -> step (app (lam T2 ([x:tm] E x)) E2) (E E2).

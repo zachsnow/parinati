@@ -1,0 +1,27 @@
+% Polymorphic lists.
+ty : type.
+
+wt : ty -> type.
+
+i : ty.
+unit : wt i.
+
+nat : ty.
+0 : wt nat.
+s : wt nat -> wt nat.
+
+list : ty -> ty.
+
+nil : {A : ty} wt (list A).
+cons : {A : ty} wt A -> wt (list A) -> wt (list A).
+
+append : {A : ty} wt (list A) -> wt (list A) -> wt (list A) -> type.
+
+append_nil : {A : ty}{L : wt (list A)} append A (nil A) L L.
+append_cons :
+  {A : ty}{X : wt A}{L : wt (list A)}{K : wt (list A)}{M : wt (list A)}
+  append A L K M ->
+    append A (cons A X L) K (cons A X M).
+
+%solve t1 : append nat (cons nat 0 (nil nat)) (cons nat (s 0) (nil nat)) R.
+%solve t2 : wt (list i).

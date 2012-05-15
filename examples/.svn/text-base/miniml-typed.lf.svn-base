@@ -1,0 +1,160 @@
+% Abstract Syntax.
+
+% Types.
+ty : type.
+arrow : ty -> ty -> ty.
+tuple : ty -> ty -> ty.
+nat : ty.
+
+% Typed Expressions.
+texpr : ty -> type.
+z-t : texpr nat.
+s-t : texpr nat -> texpr nat.
+
+pair-t : {AT : ty}{BT : ty} texpr AT -> texpr BT -> texpr (tuple AT BT).
+fst-t : {AT : ty}{BT : ty} texpr (tuple AT BT) -> texpr AT.
+snd-t : {AT : ty}{BT : ty} texpr (tuple AT BT) -> texpr BT.
+
+case-t :
+  {BranchT : ty} texpr nat -> texpr BranchT -> (texpr nat -> texpr BranchT) ->
+  texpr BranchT.
+
+lam-t : {T1 : ty}{T2 : ty} (texpr T1 -> texpr T2) -> texpr (arrow T1 T2).
+app-t : {T1 : ty}{T2 : ty} texpr (arrow T1 T2) -> texpr T1 -> texpr T2.
+
+letv-t : {T1 : ty}{T2 : ty} texpr T1 -> (texpr T1 -> texpr T2) -> texpr T2.
+letn-t : {T1 : ty}{T2 : ty} texpr T1 -> (texpr T1 -> texpr T2) -> texpr T2.
+fix-t : {T : ty}(texpr T -> texpr T) -> texpr T.
+
+% Typed Evaluation.
+
+teval : {A : ty} texpr A -> texpr A -> type.
+
+teval-z :
+   teval nat z-t z-t.
+
+teval-s :
+  {E : texpr nat}{V : texpr nat} teval nat (s-t E) (s-t V) <- teval nat E V.
+
+teval-pair :
+  {AT : ty}{BT : ty}{A : texpr AT}{B : texpr BT}{A' : texpr AT}{B' : texpr BT}
+  teval (tuple AT BT) (pair-t AT BT A B) (pair-t AT BT A' B') <-
+  teval AT A A' <- teval BT B B'.
+teval-fst :
+  {AT : ty}{BT : ty}{A : texpr AT}{B : texpr BT}{E : texpr (tuple AT BT)}
+  teval AT (fst-t AT BT E) A <-
+  teval (tuple AT BT) E (pair-t AT BT A B).
+teval-snd :
+  {AT : ty}{BT : ty}{A : texpr AT}{B : texpr BT}{E : texpr (tuple AT BT)}
+  teval BT (snd-t AT BT E) B <-
+  teval (tuple AT BT) E (pair-t AT BT A B).
+  
+teval-case-z :
+  {Test : texpr nat}{BranchT : ty}{True : texpr BranchT}{False : texpr nat -> texpr BranchT}{V : texpr BranchT}
+  teval BranchT (case-t BranchT Test True False) V <- teval nat Test z-t <- teval BranchT True V.
+teval-case-s :
+  {Test : texpr nat}{BranchT : ty}{True : texpr BranchT}{False : texpr nat -> texpr BranchT}{N : texpr nat}{V : texpr BranchT}
+  teval BranchT (case-t BranchT Test True False) V <-
+  teval nat Test (s-t N) <-
+  teval BranchT (False N) V.
+
+teval-lam :
+  {T1 : ty}{T2 : ty}{E : texpr T1 -> texpr T2}
+  teval (arrow T1 T2) (lam-t T1 T2 E) (lam-t T1 T2 E).
+teval-app :
+  {T1 : ty}{T2 : ty}{A : texpr (arrow T1 T2)}{B : texpr T1}{F : texpr T1 -> texpr T2}{X : texpr T1}{V : texpr T2}
+  teval T2 (app-t T1 T2 A B) V <-
+  teval (arrow T1 T2) A (lam-t T1 T2 F) <-
+  teval T1 B X <-
+  teval T2 (F X) V.
+
+teval-letv :
+  {T1 : ty}{T2 : ty}{E1 : texpr T1}{E2 : texpr T1 -> texpr T2}{V1 : texpr T1}{V2 : texpr T2}
+  teval T2 (letv-t T1 T2 E1 E2) V2 <- teval T1 E1 V1 <- teval T2 (E2 V1) V2.
+
+teval-letn :
+  {T1 : ty}{T2 : ty}{E1 : texpr T1}{E2 : texpr T1 -> texpr T2}{V : texpr T2}
+  teval T2 (letn-t T1 T2 E1 E2) V <- teval T2 (E2 E1) V.
+
+teval-fix :
+  {T : ty}{E : texpr T -> texpr T}{V : texpr T}
+  teval T (fix-t T E) V <- teval T (E (fix-t T E)) V.
+
+
+sum : texpr nat -> texpr nat -> texpr nat -> type.
+sum-n : {X : texpr nat}{Y : texpr nat}{Z : texpr nat}
+  sum X Y Z <-
+  teval
+    nat
+    (letv-t
+		  (arrow nat (arrow nat nat))
+			nat
+      (fix-t (arrow nat (arrow nat nat))
+			  ([plus : texpr (arrow nat (arrow nat nat))]
+			    (lam-t nat (arrow nat nat) ([x : texpr nat]
+          (lam-t nat nat ([y : texpr nat]
+				    case-t nat x
+					    y
+              ([n : texpr nat]
+						    (app-t nat nat
+							    (app-t nat (arrow nat nat) plus n) (s-t y)))
+				  )))))
+		  )
+			([plus : texpr (arrow nat (arrow nat nat))]
+			  (app-t nat nat (app-t nat (arrow nat nat) plus X) Y))
+		)
+		Z.
+
+prod : texpr nat -> texpr nat -> texpr nat -> type.
+prod-n : {X : texpr nat}{Y : texpr nat}{Z : texpr nat}
+  prod X Y Z <-
+  teval
+    nat
+    (letv-t
+		  (arrow nat (arrow nat nat))
+			nat
+      (fix-t (arrow nat (arrow nat nat))
+			  ([plus : texpr (arrow nat (arrow nat nat))]
+			    (lam-t nat (arrow nat nat) ([x : texpr nat]
+          (lam-t nat nat ([y : texpr nat]
+				    case-t nat x
+					    y
+              ([n : texpr nat]
+						    (app-t nat nat
+							    (app-t nat (arrow nat nat) plus n) (s-t y)))
+				  )))))
+		  )
+			([plus : texpr (arrow nat (arrow nat nat))]
+			  (letv-t
+				  (arrow nat (arrow nat nat))
+					nat
+					(fix-t (arrow nat (arrow nat nat))
+					  ([times : texpr (arrow nat (arrow nat nat))]
+						  (lam-t nat (arrow nat nat) ([x : texpr nat]
+							(lam-t nat nat ([y : texpr nat]
+							  case-t nat x
+								  z-t
+									([n : texpr nat]
+									  (app-t nat nat
+										  (app-t nat (arrow nat nat) plus y)
+											  (app-t nat nat
+										  	  (app-t nat (arrow nat nat) times n) y)))
+						  ))))
+					  )
+				  )
+					([times : texpr (arrow nat (arrow nat nat))]
+					  (app-t nat nat (app-t nat (arrow nat nat) times X) Y))
+			  )
+      )
+		)
+		Z.
+
+%solve main :
+  prod
+	  (s-t (s-t (s-t (s-t (s-t (s-t (s-t (s-t (s-t (s-t
+			  z-t
+      ))))))))))
+	  (s-t (s-t (s-t (s-t (s-t (s-t (s-t (s-t (s-t (s-t
+			  z-t
+			))))))))))
+    A.

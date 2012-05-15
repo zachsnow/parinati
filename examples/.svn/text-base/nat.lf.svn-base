@@ -1,0 +1,15 @@
+nat : type.
+z : nat.
+s : nat -> nat.
+
+even : nat -> type.
+even_z : even z.
+even_s : {N : nat} (even N -> even (s (s N))).
+
+num : nat -> type.
+num_o : {N : nat} num N.
+
+%solve even_0 : even z.
+%solve even_2 : even (s (s z)).
+
+%solve abstract : {N : nat} num N.
