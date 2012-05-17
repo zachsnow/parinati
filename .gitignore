@@ -1,1 +1,9 @@
 *~
+*.cmi
+*.cmx
+*.cmo
+*.o
+bin/
+lflexer.ml
+lfparser.ml
+lfparser.mli
