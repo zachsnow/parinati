@@ -130,6 +130,7 @@ let main () =
   let twelf = Parse.parse input in
   match twelf with
       Some(twelf') ->
+        (* Rudimentary error checking. *)
         if Twelf.typecheck twelf' then
           translate twelf'
         else

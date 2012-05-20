@@ -28,7 +28,7 @@ struct
   **********************************************************************)
   let term_of_contextitem c =
     match Translator.term_of_contextitem c with
-      | Some c' ->  Lp.elide (Lp.normalize (c'))
+      | Some c' ->  Lp.elide (Lp.normalize c')
       | None -> None
 
   (**********************************************************************

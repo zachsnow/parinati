@@ -17,8 +17,16 @@
 * You should have received a copy of the GNU General Public License
 * along with Parinati.  If not, see <http://www.gnu.org/licenses/>.
 **********************************************************************)
+(**********************************************************************
+*Optimizations:
+* There are several available optimizations; the default ones are
+* used when 'optimizations' is set, along with any others that are
+* set.  If 'optimizations' is not set, just the manually specified
+* optimizations are used.
+**********************************************************************)
 let version = "0.3.0"
 
+(* Optimization options *)
 let optimizations = ref false
 let indexingOptimization = ref false
 let typeOptimization = ref false
@@ -26,10 +34,8 @@ let noProofTermsOptimization = ref false
 
 let setDefaultOptimizations () =
   ();
-  
-(**********************************************************************
-* Translation
-**********************************************************************)
+
+(* Translation options *)
 type translation =
     Original
   | Simplified

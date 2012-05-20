@@ -4,6 +4,14 @@ parinati
 A somewhat broken implementation of LF logic programming
 --------------------------------------------------------
 
+Parinati is a tool for "compiling" LF specifications in the style of
+Twelf to lambdaProlog modules suitable for use with the Teyjus implementation
+of lambdaProlog.  Parinati was written by Zach Snow.
+
+Parinati is Free Software, released under the GPL version 3 for now; if you'd
+prefer another license just let me know.
+
+Parinati lives here now: http://github.com/zachsnow/parinati
 
 Building
 --------
@@ -82,12 +90,12 @@ Supported Features
   If you have an LF specification written in implicit style, with perhaps several
   infix operators, you may wish to generate a specification that can be used
   with Parinati.  To generate such a specification from a specification "spec.lf",
-  first load up the Twelf SML image.  Then set the following flags::
+  first load up the Twelf SML image.  Then set the following flags:
   
       Twelf.Print.implicit := true;;
       Twelf.Print.printInfix := false;;
     
-  Then load the file::
+  Then load the file:
   
       Twelf.loadFile();;
     

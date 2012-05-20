@@ -22,13 +22,21 @@ open Lexing
 
 type pos = position
 
-let anyErrors = ref false
-
-let errorsEnabled = ref true
+(**********************************************************************
+* Error message options.
+**********************************************************************)
+let errorsEnabled = ref true  (* For hacking purposes only! *)
 let warningsEnabled = ref true
 let loggingEnabled = ref false
 
 let warningsAsErrors = ref false
+
+(**********************************************************************
+*anyErrors:
+* This flag is set to true any time an error is encountered.  It remains
+* true until it is manually reset.
+**********************************************************************)
+let anyErrors = ref false
 
 (********************************************************************
 *none:
@@ -40,10 +48,10 @@ let none = { pos_fname = "none" ;
              pos_bol = 0 ;
              pos_cnum = 0 }
   
-(********************************************************************
+(**********************************************************************
 *string_of_pos:
-*  Convert a pos to a string.
-********************************************************************)
+* Produces a human-readable representation of a position.
+**********************************************************************)
 let string_of_pos pos =
   if pos = none then
     ""
@@ -70,28 +78,28 @@ let rec printPosition pos msg =
 
 (********************************************************************
 *reset:
-* Just resets the error message module.
+* Resets the error message module.
 ********************************************************************)
 let reset () = anyErrors := false
 
-(********************************************************************
-*info:
-* Formats information for output using error or warning.
-********************************************************************)
-let info msg =
-  "\n\t" ^ msg
+(**********************************************************************
+*impossible:
+* Outputs internal error information.  Cannot be disabled. Raises
+* InternalError.
+**********************************************************************)
+let impossible pos msg =
+  (anyErrors := true;
+  printPosition pos "Internal Error";
+  prerr_string msg; 
+  prerr_newline ();
+  flush stderr;
+  raise InternalError)
 
-(********************************************************************
-*see:
-* Annotates a message with a file location.
-********************************************************************)
-let see pos msg =
-  (info "See " ^ msg ^ " at " ^ (string_of_pos pos))
-
-(********************************************************************
+(**********************************************************************
 *error:
-* Prints an error, along with the line and character position.
-********************************************************************)
+* Outputs error information.  Can be enabled/disabled with the
+* errorsEnabled flag.
+**********************************************************************)
 let error pos msg =
   if !errorsEnabled then
     (anyErrors := true;
@@ -101,10 +109,11 @@ let error pos msg =
   else
     ()
 
-(********************************************************************
+(**********************************************************************
 *warning:
-* Prints a warning, along with the line and character position.
-********************************************************************)
+* Outputs warning information.  Can be enabled/disabled with the
+* warningEnabled flag.
+**********************************************************************)
 let warning pos msg =
   if !warningsEnabled && !errorsEnabled then
     (if !warningsAsErrors then
@@ -118,10 +127,11 @@ let warning pos msg =
   else
     ()    
 
-(********************************************************************
+(**********************************************************************
 *log:
-*  Outputs logging information.
-********************************************************************)
+* Outputs logging information.  Can be enabled/disabled with the
+* loggingEnabled flag.
+**********************************************************************)
 let log pos msg =
   if !loggingEnabled then
     (printPosition pos "Log";
@@ -131,23 +141,10 @@ let log pos msg =
   else
     ()
 
-(********************************************************************
-*impossible:
-* Prints an internal compiler error, then throws an exception
-* InternalError.
-********************************************************************)
-let impossible pos msg =
-  (anyErrors := true;
-  printPosition pos "Internal Error";
-  prerr_string msg; 
-  prerr_newline ();
-  flush stderr;
-  raise InternalError)
-
-(********************************************************************
+(**********************************************************************
 *print:
-* Just print.
-********************************************************************)
+* Just prints information, possibly with position.
+**********************************************************************)
 let print pos msg =
   (printPosition pos "";
   prerr_string msg;

@@ -17,13 +17,6 @@
 * You should have received a copy of the GNU General Public License
 * along with Parinati.  If not, see <http://www.gnu.org/licenses/>.
 **********************************************************************)
-(**********************************************************************
-*Optimizations:
-* There are several available optimizations; the default ones are
-* used when 'optimizations' is set, along with any others that are
-* set.  If 'optimizations' is not set, just the manually specified
-* optimizations are used.
-**********************************************************************)
 val version : string
 
 (**********************************************************************

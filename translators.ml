@@ -363,8 +363,14 @@ let rec isRigid term binders =
 * Given a list of binders and a term, returns a list of variables
 * that are used rigidly in the term.  This list is a sublist of
 * the given binders.
+*
+* Rigid variables are:
+*   - 
+*
+*
 ******************************************************************)
 let rec collectRigidVariables binders term =
+  
   let rec collect rhs term =
     match term with
       | Twelf.IdTerm(x,_) ->
@@ -388,6 +394,7 @@ let rec collectRigidVariables binders term =
           raise TranslationError)
   in
   collect true term
+
 (**********************************************************************
 *OptimizedTranslation:
 * The optimized translation.

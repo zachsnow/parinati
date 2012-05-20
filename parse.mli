@@ -22,6 +22,5 @@
 *Parse Module:
 * An interface to the lexer and parser.
 **********************************************************************)
-(*  Parse an LF specificaiton. *)
 val parse : string -> Twelf.absyn option
 val openFile : string -> (string -> 'a) -> 'a
