@@ -167,39 +167,39 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\errormsg.ml"
+				RelativePath=".\src\errormsg.ml"
 				>
 			</File>
 			<File
-				RelativePath=".\util.ml"
+				RelativePath=".\src\util.ml"
 				>
 			</File>
 			<File
-				RelativePath=".\lp.ml"
+				RelativePath=".\src\lp.ml"
 				>
 			</File>
 			<File
-				RelativePath=".\main.ml"
+				RelativePath=".\src\main.ml"
 				>
 			</File>
 			<File
-				RelativePath=".\options.ml"
+				RelativePath=".\src\options.ml"
 				>
 			</File>
 			<File
-				RelativePath=".\parse.ml"
+				RelativePath=".\src\parse.ml"
 				>
 			</File>
 			<File
-				RelativePath=".\translate.ml"
+				RelativePath=".\src\translate.ml"
 				>
 			</File>
 			<File
-				RelativePath=".\translators.ml"
+				RelativePath=".\src\translators.ml"
 				>
 			</File>
 			<File
-				RelativePath=".\twelf.ml"
+				RelativePath=".\src\twelf.ml"
 				>
 			</File>
 		</Filter>
@@ -209,35 +209,35 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\errormsg.mli"
+				RelativePath=".\src\errormsg.mli"
 				>
 			</File>
 			<File
-				RelativePath=".\util.mli"
+				RelativePath=".\src\util.mli"
 				>
 			</File>
 			<File
-				RelativePath=".\lp.mli"
+				RelativePath=".\src\lp.mli"
 				>
 			</File>
 			<File
-				RelativePath=".\options.mli"
+				RelativePath=".\src\options.mli"
 				>
 			</File>
 			<File
-				RelativePath=".\parse.mli"
+				RelativePath=".\src\parse.mli"
 				>
 			</File>
 			<File
-				RelativePath=".\translate.mli"
+				RelativePath=".\src\translate.mli"
 				>
 			</File>
 			<File
-				RelativePath=".\translators.mli"
+				RelativePath=".\src\translators.mli"
 				>
 			</File>
 			<File
-				RelativePath=".\twelf.mli"
+				RelativePath=".\src\twelf.mli"
 				>
 			</File>
 		</Filter>
@@ -247,11 +247,11 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath=".\lflexer.mll"
+				RelativePath=".\src\lflexer.mll"
 				>
 			</File>
 			<File
-				RelativePath=".\lfparser.mly"
+				RelativePath=".\src\lfparser.mly"
 				>
 			</File>
 		</Filter>

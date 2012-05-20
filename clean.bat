@@ -1,5 +1,5 @@
-del *.cm*
-del *.obj
+del src\*.cm*
+del src\*.obj
 del examples\*.sig
 del examples\*.mod
 del examples\*.lp

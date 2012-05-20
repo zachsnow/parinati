@@ -1,7 +1,5 @@
 #!/bin/sh
-# compile.sh:
-#   This script compiles Parinati.
-mkdir bin
-echo Compiling...
-ocamake *.ml* str.cmxa -opt -o bin/parinati
+echo Compiling parinati...
+mkdir -p bin
+ocamake src/*.ml* str.cmxa -opt -o bin/parinati
 echo Done.
