@@ -45,7 +45,6 @@ type translation =
     Original
   | Simplified
   | Optimized
-  | Extended
   
 let translation = ref Original
 let setTranslation s =
@@ -53,7 +52,6 @@ let setTranslation s =
     "original" -> translation := Original
   | "simplified" -> translation := Simplified
   | "optimized" -> translation := Optimized
-  | "extended" -> translation := Extended
   | _ ->
     Errormsg.error Errormsg.none ("invalid translation: " ^ s);
   

@@ -36,8 +36,6 @@ type translation =
     Original
   | Simplified
   | Optimized
-  | Extended
-  | Strange
-  
+
 val translation : translation ref
 val setTranslation : string -> unit

@@ -92,9 +92,5 @@ let translate name twelf =
     | Options.Optimized ->
        let module T = Translation(Translators.OptimizedTranslation) in
         T.translate name twelf
-    | Options.Extended ->
-        let module T = Translation(Translators.ExtendedTranslation) in
-        T.translate name twelf
-    | Options.Strange ->
-        let module T = Translation(Translators.StrangeTranslation) in
-        T.translate name twelf
+    | _ ->
+        Errormsg.impossible Errormsg.none ("invalid translator " ^ name)
