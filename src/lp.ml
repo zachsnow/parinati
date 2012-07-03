@@ -59,7 +59,7 @@ let map_name =
   let mapped_names = ref [] in
   
   let add_mapping n n' =
-    mapped_names := (n, n') :: !mappedNames
+    mapped_names := (n, n') :: !mapped_names
   in
   
   (* A probably-incomplete list of Teyjus/lambdaProlog reserved words. *)
@@ -136,7 +136,7 @@ let rec target_type ty =
   match ty with
     | IdType _
     | VariableType _ -> ty
-    | ArrowType(_,r) -> targetType r
+    | ArrowType(_,r) -> target_type r
 
 (**********************************************************************
 *argument_types:
@@ -150,7 +150,7 @@ let rec argument_types ty =
     | IdType _
     | VariableType _ -> []
     | ArrowType(l,r) ->
-        [l] @ (argumentTypes r)
+        [l] @ (argument_types r)
 
 (**********************************************************************
 * Type construction shortcuts.

@@ -49,7 +49,7 @@ val arrow_type : ty list -> ty -> ty
 val predicate_type : ty
 
 val top : term
-val forAll : string -> term -> term
+val for_all : string -> term -> term
 val implies : term -> term -> term
 val head_and_argument_terms : term -> (string * term list) option
 
