@@ -35,13 +35,13 @@ and term =
   | PiTerm of string * term * term * pos
   | Type of pos
 
-let getContextItemPos (Assertion(_,_,p)) = p
+let get_contextitem_pos (Assertion(_,_,p)) = p
 
-let getDeclarationPos d = match d with
+let get_declaration_pos d = match d with
     Solve(_,_,p)
   | Domain(_,p) -> p
 
-let getTermPos t = match t with
+let get_term_pos t = match t with
     IdTerm(_, p)
   | AbstractionTerm(_,_,_,p)
   | ApplicationTerm(_,_,p)
@@ -54,7 +54,7 @@ let getTermPos t = match t with
 * prints an LF term in LF syntax.
 **********************************************************************)
 let rec string_of_term t =
-  let needsParens t =
+  let needs_parens t =
     match t with
       Type(_)
     | IdTerm(_) -> false
@@ -65,7 +65,7 @@ let rec string_of_term t =
   in
   let parens t =
     let s = string_of_term t in
-    if needsParens t then
+    if needs_parens t then
       "(" ^ s ^ ")"
     else
       s
@@ -85,7 +85,7 @@ let rec string_of_term t =
 * Determines whether the name is possibly a universal variable (i.e.,
 * capitalized or '_').
 **********************************************************************)
-let isUniversal s =
+let is_universal s =
   if s = "" then
     false
   else
@@ -129,7 +129,7 @@ let freeVariables t =
   unbound [] t
 
 let typecheck (Specification(items, judgments)) =
-  let rec checkTerm bvs t =
+  let rec check_term bvs t =
     match t with
       | IdTerm(n,pos) ->
           if not (List.mem n bvs) then
@@ -139,21 +139,21 @@ let typecheck (Specification(items, judgments)) =
             true
       | ApplicationTerm(l,r,_)
       | ImplicationTerm(l,r,_) ->
-          (checkTerm bvs l) && (checkTerm bvs r)
+          (check_term bvs l) && (check_term bvs r)
       | AbstractionTerm(n, ty, term, _)
       | PiTerm(n, ty, term, _) ->
-          (checkTerm bvs ty) && (checkTerm (n::bvs) term)
+          (check_term bvs ty) && (check_term (n::bvs) term)
       | Type(_) -> true
   in
-  let checkContextItem bvs ci =
+  let check_context_item bvs ci =
     match ci with
       Assertion(IdTerm(n,_), ty, pos) ->
-        if not (checkTerm bvs ty) then
+        if not (check_term bvs ty) then
           Errormsg.error pos ("invalid context item type: " ^ (string_of_term ty));
         n :: bvs
     | Assertion(t, _, pos) ->
         (Errormsg.error pos ("invalid context item name: " ^ (string_of_term t));
         bvs)
   in
-  let _ = List.fold_left checkContextItem [] items in
+  let _ = List.fold_left check_context_item [] items in
   not !Errormsg.anyErrors

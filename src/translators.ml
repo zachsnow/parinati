@@ -91,7 +91,7 @@ let rec encodeTerm t =
     | Twelf.AbstractionTerm(v,_,t,_) ->
         Lp.AbstractionTerm(v, encodeTerm t)
     | _ ->
-        let pos = Twelf.getTermPos t in
+        let pos = Twelf.get_term_pos t in
         let () = Errormsg.error pos
           ("unable to encode term: " ^ (Twelf.string_of_term t)) in
         raise TranslationError
@@ -357,7 +357,7 @@ let rec is_rigid term binders =
     Twelf.IdTerm(s,_) -> not (List.mem s binders)
   | Twelf.ApplicationTerm(l,_,_) -> is_rigid l binders
   | _ ->
-      let pos = Twelf.getTermPos term in
+      let pos = Twelf.get_term_pos term in
       (Errormsg.error pos
         ("unable to determine term rigidity: " ^ (Twelf.string_of_term term));
       raise TranslationError)

@@ -59,7 +59,7 @@ let set_output () =
     ()
 
 (**********************************************************************
-*parseArguments:
+*parse_arguments:
 * Handles printing usage information, handling arguments, etc.
 **********************************************************************)
 let parse_arguments () =

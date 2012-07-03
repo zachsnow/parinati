@@ -35,15 +35,15 @@ and term =
   | PiTerm of string * term * term * pos
   | Type of pos
 
-val getContextItemPos : contextitem -> pos
+val get_contextitem_pos : contextitem -> pos
+val get_declaration_pos : declaration -> pos
+val get_term_pos : term -> pos
+
 val string_of_contextitem : contextitem -> string
 
-val getDeclarationPos : declaration -> pos
-
-val getTermPos : term -> pos
 val string_of_term : term -> string
-val freeVariables : term -> string list
+val free_variables : term -> string list
 
-val isUniversal : string -> bool
+val is_universal : string -> bool
 
 val typecheck : absyn -> bool
