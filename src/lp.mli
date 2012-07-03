@@ -41,21 +41,21 @@ and ty =
   | VariableType of string
   | ArrowType of ty * ty
 
-val idType : string -> ty
-val arrowType : ty list -> ty -> ty
-val predicateType : ty
+val target_type : ty -> ty
+val argument_types : ty -> ty list
+
+val id_type : string -> ty
+val arrow_type : ty list -> ty -> ty
+val predicate_type : ty
 
 val top : term
 val forAll : string -> term -> term
 val implies : term -> term -> term
+val head_and_argument_terms : term -> (string * term list) option
 
 val string_of_absyn : absyn -> string * string
 val string_of_term : term -> string
 val string_of_type : ty -> string
-
-val targetType : ty -> ty
-val argumentTypes : ty -> ty list
-val getTypeHeadAndArgs : term -> (string * term list) option
 
 val normalize : term -> term
 val elide : term -> term option

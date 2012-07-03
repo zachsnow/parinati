@@ -23,14 +23,14 @@ and lpsignature = Signature of lptype list * constant list
 and lpmodule = Module of declaration list
 
 and declaration =
-    Term of term
+  | Term of term
   | Accum of string
 
 and lptype = Type of string * int
 and constant = Constant of string * ty
 
 and term =
-    IdTerm of string
+  | IdTerm of string
   | ApplicationTerm of term * term list
   | AbstractionTerm of string * term
   | ImplicationTerm of term * term
@@ -38,33 +38,116 @@ and term =
   | PiTerm of term
 
 and ty =
-    IdType of string
+  | IdType of string
   | VariableType of string
   | ArrowType of ty * ty
 
 (**********************************************************************
-*targetType:
+*map_name:
+* Maps LF names to LP names.  Just remaps names that interfere with
+* LP keywords, and replaces invalid characters with 'x'.  There's
+* a counter for generated names.
+**********************************************************************)
+let generate =
+  let name_counter = ref 0 in
+  fun n ->
+    let n' = "lf-" ^ n ^ "-" ^ (string_of_int !name_counter) in
+    (incr name_counter;
+    n')
+
+let map_name =
+  let mapped_names = ref [] in
+  
+  let add_mapping n n' =
+    mapped_names := (n, n') :: !mappedNames
+  in
+  
+  (* A probably-incomplete list of Teyjus/lambdaProlog reserved words. *)
+  let reserved =
+    [
+      "accum_sig"; "accumulate"; "closed"; "end"; "exportdef"; "import";
+      "infix"; "infixl"; "infixr"; "kind"; "local"; "localkind";
+      "module"; "postfix"; "posfixl"; "prefix"; "prefixr"; "sig";
+      "type"; "typeabbrev"; "use_sig"; "useonly"; ":-"; "=>";
+      "\\"; "->"; "!";
+      
+      "::"; "nil"; "+"; "-"; "*"; "/"; "~"; "<"; "="; ">"; "=<"; ">=";
+      "pi"; "sigma"; ","; ";"; "&"; "."; "("; ")"; ":"; "["; "]" 
+    ]
+  in
+  
+  (* Characters that shouldn't be in regular names; some of them are
+     technically legal in some positions, but we'll just strip them all. *)
+  let invalid_characters =
+    [
+      '='; '>'; '<'; '#';
+      '?'; '%'; '!'; '@'; '$';
+      '^'; '&'; '*'; '('; ')';
+      ';'; ':'; '{'; '}'; '[';
+      ']'; '|'; '\\'; '/'; '+'
+    ]
+  in
+  
+  let explode s =
+    let cs = ref [] in
+    (String.iter (fun c -> cs := c :: !cs) s;
+    List.rev !cs)
+  in
+  
+  let implode cs =
+    List.fold_left (fun s c -> s ^ (String.make 1 c)) "" cs
+  in
+  
+  let strip n =
+    let ns = explode n in
+    let ns' = List.map (fun ch -> if List.mem ch invalid_characters then 'x' else ch) ns in
+    implode ns'
+  in
+  
+  fun name ->
+    try
+      List.assoc name !mapped_names
+    with
+      Not_found ->
+        if List.mem name reserved or List.exists (String.contains name) invalid_characters then
+          let name' = generate (strip name) in
+          (add_mapping name name';
+          name')
+        else
+          (add_mapping name name;
+          name)
+
+(**********************************************************************
+*map_domain_name:
+* Maps Twelf domain names to LP module names; currently unused as
+* Parinati doesn't support domains.
+**********************************************************************)
+let map_domain_name n =
+  Str.global_replace (Str.regexp_string "/") "_" n
+
+(**********************************************************************
+*target_type:
 * Collects the "target" type of an arrow type; given:
 *   A1 -> A2 -> ... An -> T 
 * Returns:
 *   T
 **********************************************************************)
-let rec targetType ty =
+let rec target_type ty =
   match ty with
-      IdType _
+    | IdType _
     | VariableType _ -> ty
     | ArrowType(_,r) -> targetType r
 
 (**********************************************************************
-*argumentTypes:
+*argument_types:
 * Collects the "argument" types of an arrow type; given:
 *   A1 -> A2 -> ... An -> T 
 * Returns:
 *   [A1, ..., An]
 **********************************************************************)
-let rec argumentTypes ty =
+let rec argument_types ty =
   match ty with
-      IdType _
+    | IdType _
     | VariableType _ -> []
     | ArrowType(l,r) ->
         [l] @ (argumentTypes r)
@@ -72,28 +155,42 @@ let rec argumentTypes ty =
 (**********************************************************************
 * Type construction shortcuts.
 **********************************************************************)
-let idType s = IdType(s)
-let rec arrowType args t =
+let id_type s = IdType(s)
+
+let rec arrow_type args t =
   match args with
-    [] -> t
-  | arg::args' -> ArrowType(arg, arrowType args' t)
-let predicateType = idType "o"
+  | [] -> t
+  | arg::args' -> ArrowType(arg, arrow_type args' t)
+
+let predicate_type = id_type "o"
+
+(**********************************************************************
+*head_and_argument_terms:
+* All terms representing LF base types should have rigid constant
+* heads; return this one's head separate from its arguments.
+**********************************************************************)
+let head_and_argument_terms term =
+  let rec get term args =
+    match term with
+      | IdTerm(s) -> Some (s, args)
+      | ApplicationTerm(l,r) -> get l (r @ args)
+      | _ -> None
+  in
+  get term []
 
 (**********************************************************************
 * Term construction shortcuts.
 **********************************************************************)
 let top = IdTerm "true"
-let forAll x t = PiTerm(AbstractionTerm(x, t))
+let for_all x t = PiTerm(AbstractionTerm(x, t))
 let implies l r = ImplicationTerm(l, r)
 
 (**********************************************************************
 * Pretty-printing.
 **********************************************************************)
-(* string_of_absyn *)
 let rec string_of_absyn (Program(name, s, m)) =
   (string_of_signature name s, string_of_module name m)
 
-(* string_of_signature *)
 and string_of_signature name (Signature(types, constants)) =
   "% Generated by Parinati (version " ^ Options.version ^ ")\n" ^
   "sig " ^ name ^ ".\n\n" ^
@@ -111,7 +208,7 @@ and string_of_lptype (Type(name, k)) =
       | 0 -> "type"
       | _ -> "type -> " ^ (string_of_kind (k - 1))
   in
-  let n' = mapName name in
+  let n' = map_name name in
   "kind " ^ n' ^ " " ^ (string_of_kind k) ^ ".\n"
   
 (**********************************************************************
@@ -119,7 +216,7 @@ and string_of_lptype (Type(name, k)) =
 * Deals with printing context items.
 **********************************************************************)
 and string_of_constant (Constant(name,t)) =
-  let n' = mapName name in
+  let n' = map_name name in
   "type " ^ n' ^ " " ^ (string_of_type t) ^ ".\n"
 
 (**********************************************************************
@@ -127,7 +224,7 @@ and string_of_constant (Constant(name,t)) =
 **********************************************************************)
 and string_of_type t =
   match t with
-    IdType(s) -> (mapName s)
+    IdType(s) -> (map_name s)
   | VariableType(s) -> s
   | ArrowType(l,r) ->
       "(" ^ (string_of_type l) ^ " -> " ^ (string_of_type r) ^ ")"
@@ -154,7 +251,7 @@ and string_of_declaration j =
 **********************************************************************)
 and string_of_term term =
   match term with
-      IdTerm(s) -> (mapName s)
+      IdTerm(s) -> (map_name s)
     | ApplicationTerm(head, args) ->
         let sep = if (List.length args) = 0 then "" else " " in
         "(" ^ (string_of_term head) ^ sep ^
@@ -170,103 +267,11 @@ and string_of_term term =
         "(pi " ^ (string_of_term t) ^ ")"
 
 (**********************************************************************
-*mapName:
-* Maps LF names to LP names.  Just remaps names that interfere with
-* LP keywords, and replaces invalid characters with 'x'.  There's
-* a counter for generated names.
-**********************************************************************)
-and generate =
-  let nameCounter = ref 0 in
-  fun n ->
-    let n' = "lf-" ^ n ^ "-" ^ (string_of_int !nameCounter) in
-    (incr nameCounter;
-    n')
-
-and mapName =
-  let mappedNames = ref [] in
-  let addMapping n n' = mappedNames := (n, n') :: !mappedNames in
-  let reserved =
-    [
-      "accum_sig"; "accumulate"; "closed"; "end"; "exportdef"; "import";
-      "infix"; "infixl"; "infixr"; "kind"; "local"; "localkind";
-      "module"; "postfix"; "posfixl"; "prefix"; "prefixr"; "sig";
-      "type"; "typeabbrev"; "use_sig"; "useonly"; ":-"; "=>";
-      "\\"; "->"; "!";
-      
-      "::"; "nil"; "+"; "-"; "*"; "/"; "~"; "<"; "="; ">"; "=<"; ">=";
-      "pi"; "sigma"; ","; ";"; "&"; "."; "("; ")"; ":"; "["; "]" 
-    ]
-  in
-  let invalidCharacters =
-    [
-      '='; '>'; '<'; '#';
-      '?'; '%'; '!'; '@'; '$';
-      '^'; '&'; '*'; '('; ')';
-      ';'; ':'; '{'; '}'; '[';
-      ']'; '|'; '\\'; '/'; '+'
-    ]
-  in
-  
-  let explode s =
-    let cs = ref [] in
-    (String.iter (fun c -> cs := c :: !cs) s;
-    List.rev !cs)
-  in
-  let implode cs =
-    List.fold_left (fun s c -> s ^ (String.make 1 c)) "" cs
-  in
-  
-  let strip n =
-    let ns = explode n in
-    let ns' = List.map (fun ch -> if List.mem ch invalidCharacters then 'x' else ch) ns in
-    implode ns'
-  in
-  
-  fun name ->
-    try
-      List.assoc name !mappedNames
-    with
-      Not_found ->
-        if List.mem name reserved then
-          let name' = generate (strip name) in
-          (addMapping name name';
-          name')
-        else if List.exists (String.contains name) invalidCharacters then
-          let name' = generate (strip name) in
-          (addMapping name name';
-          name')
-        else
-          (addMapping name name;
-          name)
-
-(**********************************************************************
-*mapDomainName:
-* Maps Twelf domain names to LP module names; currently unused as
-* Parinati doesn't support domains.
-**********************************************************************)
-let mapDomainName n =
-  Str.global_replace (Str.regexp_string "/") "_" n
-
-(**********************************************************************
-*getTypeHeadAndArgs:
-* All types should have rigid constant heads; return this one's head
-* separate from its arguments.
-**********************************************************************)
-let rec getTypeHeadAndArgs ty =
-  let rec get ty args =
-    match ty with
-        IdTerm(s) -> Some (s, args)
-      | ApplicationTerm(l,r) -> get l (r @ args)
-      | _ -> None
-  in
-  get ty []
-
-(**********************************************************************
 *normalize:
 * "Normalize" a term (removing useless 'true' goals and assumptions);
 * just for readability.
 **********************************************************************)
-let isTop t = t = (IdTerm "true")
+let is_top t = t = (IdTerm "true")
 let normalize t =  
   let rec normalize' t =
     match t with
@@ -274,31 +279,31 @@ let normalize t =
       | ApplicationTerm _ -> t
       | AbstractionTerm(s, t) ->
           let t' = normalize' t in
-          if isTop t' then
+          if is_top t' then
             top
           else
             AbstractionTerm(s, t')
       | ImplicationTerm(l, r) ->
           let l' = normalize' l in
           let r' = normalize' r in
-          if isTop r' then
+          if is_top r' then
             top
-          else if isTop l' then
+          else if is_top l' then
             r'
           else
             ImplicationTerm(l', r')
       | ConjunctionTerm(l, r) ->
           let l' = normalize' l in
           let r' = normalize' r in
-          if isTop l' then
+          if is_top l' then
             r'
-          else if isTop r' then
+          else if is_top r' then
             l'
           else
             ConjunctionTerm(l', r')
       | PiTerm(t) ->
           let t' = normalize' t in
-          if isTop t' then
+          if is_top t' then
             top
           else
             PiTerm t'
