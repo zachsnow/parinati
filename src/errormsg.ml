@@ -25,18 +25,18 @@ type pos = position
 (**********************************************************************
 * Error message options.
 **********************************************************************)
-let errorsEnabled = ref true  (* For hacking purposes only! *)
-let warningsEnabled = ref true
-let loggingEnabled = ref false
+let errors_enabled = ref true  (* For hacking purposes only! *)
+let warnings_enabled = ref true
+let logging_enabled = ref false
 
-let warningsAsErrors = ref false
+let warnings_as_errors = ref false
 
 (**********************************************************************
-*anyErrors:
+*any_errors:
 * This flag is set to true any time an error is encountered.  It remains
 * true until it is manually reset.
 **********************************************************************)
-let anyErrors = ref false
+let any_errors = ref false
 
 (********************************************************************
 *none:
@@ -64,10 +64,10 @@ let string_of_pos pos =
     file ^ "(" ^ (string_of_int line) ^ "," ^ (string_of_int char) ^ ")"
 
 (********************************************************************
-*printPosition:
+*print_position:
 *  Prints position information.
 ********************************************************************)
-let rec printPosition pos msg =
+let rec print_position pos msg =
   let p = string_of_pos pos in
   if p = "" && msg = "" then
     ()
@@ -82,7 +82,7 @@ let rec printPosition pos msg =
 *reset:
 * Resets the error message module.
 ********************************************************************)
-let reset () = anyErrors := false
+let reset () = any_errors := false
 
 (**********************************************************************
 *impossible:
@@ -90,8 +90,8 @@ let reset () = anyErrors := false
 * InternalError.
 **********************************************************************)
 let impossible pos msg =
-  (anyErrors := true;
-  printPosition pos "Internal Error";
+  (any_errors := true;
+  print_position pos "Internal Error";
   prerr_string msg;
   prerr_newline ();
   flush stderr;
@@ -103,9 +103,9 @@ let impossible pos msg =
 * errorsEnabled flag.
 **********************************************************************)
 let error pos msg =
-  if !errorsEnabled then
-    (anyErrors := true;
-    printPosition pos "Error";
+  if !errors_enabled then
+    (any_errors := true;
+    print_position pos "Error";
     prerr_string msg;
     prerr_newline ())
   else
@@ -117,12 +117,12 @@ let error pos msg =
 * warningEnabled flag.
 **********************************************************************)
 let warning pos msg =
-  if !warningsEnabled && !errorsEnabled then
-    (if !warningsAsErrors then
-      anyErrors := true
+  if !warnings_enabled && !errors_enabled then
+    (if !warnings_as_errors then
+      any_errors := true
     else
       ();
-    printPosition pos "Warning";
+    print_position pos "Warning";
     prerr_string msg;
     prerr_newline ();
     flush stderr)
@@ -135,8 +135,8 @@ let warning pos msg =
 * loggingEnabled flag.
 **********************************************************************)
 let log pos msg =
-  if !loggingEnabled then
-    (printPosition pos "Log";
+  if !logging_enabled then
+    (print_position pos "Log";
     prerr_string msg;
     prerr_newline ();
     flush stderr)
@@ -148,7 +148,7 @@ let log pos msg =
 * Just prints information, possibly with position.
 **********************************************************************)
 let print pos msg =
-  (printPosition pos "";
+  (print_position pos "";
   prerr_string msg;
   prerr_newline ();
   flush stderr)

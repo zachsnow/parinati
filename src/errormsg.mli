@@ -24,12 +24,12 @@ type pos = Lexing.position
 val none : pos
 val string_of_pos : pos -> string
 
-val anyErrors : bool ref
+val any_errors : bool ref
 
-val errorsEnabled : bool ref
-val warningsEnabled : bool ref
-val loggingEnabled : bool ref
-val warningsAsErrors : bool ref
+val errors_enabled : bool ref
+val warnings_enabled : bool ref
+val logging_enabled : bool ref
+val warnings_as_errors : bool ref
 
 val impossible : pos -> string -> 'a
 val error : pos -> string -> unit
