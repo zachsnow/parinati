@@ -110,8 +110,8 @@ let translate twelf =
       Some lp' ->
         let (sig', mod') = Lp.string_of_absyn lp' in
 
-        let o_mod = Parse.open_file mod_filename open_out in
-        let o_sig = Parse.open_file sig_filename open_out in
+        let o_mod = Parse.open_file open_out mod_filename in
+        let o_sig = Parse.open_file open_out sig_filename in
         
         (output_string o_sig sig';
         output_string o_mod mod';
