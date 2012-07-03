@@ -17,39 +17,35 @@
 * You should have received a copy of the GNU General Public License
 * along with Parinati.  If not, see <http://www.gnu.org/licenses/>.
 ****************************************************************************)
-
-let fileNotFound f =
-  (print_endline ("Error: unable to open file '" ^ f ^ "'.");
-  exit (-1))
-
-(******************************************************************
-*openFile:
-* Open a file and exit if there is an error.
-******************************************************************)
-let openFile fname f =
+(****************************************************************************
+*open_file:
+* Opens a file by filename; exits if there is an error.
+****************************************************************************)
+let open_file open_f filename =
   try
-    let inchannel = f fname in
+    let inchannel = open_f filename in
     inchannel
-  with Sys_error(s) -> fileNotFound fname
+  with Sys_error(s) ->
+    (Errormsg.error Errormsg.none ("unable to open file '" ^ filename ^ "'.");
+    exit (-1))
 
-(******************************************************************
-*closeFile:
-* Closes a file given a closing function.
-******************************************************************)
-let closeFile fname f =
-  f fname
-
-(******************************************************************
+(****************************************************************************
 *parse:
-******************************************************************)
+* Parses the Twelf file given by filename and returns an AST, or
+* None on error.
+****************************************************************************)
 let parse filename =
   try
-    let inchannel = (openFile filename open_in) in
+    let inchannel = open_file open_in filename in
     let lexbuf = Lexing.from_channel inchannel in
     let () = Lflexer.setFileName lexbuf filename in
     let result = Lfparser.parse Lflexer.initial lexbuf in
-    (closeFile inchannel close_in;
+    (close_in inchannel;
     Some result)
   with
-      Parsing.Parse_error -> (print_endline "Error: syntax error."; None)
-    | Failure(s) -> (print_endline ("Error: " ^ s ^ "."); None)
+      Parsing.Parse_error ->
+        (Errormsg.error Errormsg.none "syntax error";
+        None)
+    | Failure(s) ->
+        (Errormsg.error Errormsg.none s;
+        None)

@@ -16,11 +16,10 @@
 *
 * You should have received a copy of the GNU General Public License
 * along with Parinati.  If not, see <http://www.gnu.org/licenses/>.
-**********************************************************************)
-
-(**********************************************************************
-*Parse Module:
-* An interface to the lexer and parser.
-**********************************************************************)
+****************************************************************************)
+(****************************************************************************
+*Parse:
+* An simple interface to the lexer and parser.
+****************************************************************************)
 val parse : string -> Twelf.absyn option
-val openFile : string -> (string -> 'a) -> 'a
+val open_file : (string -> 'a) -> string -> 'a
