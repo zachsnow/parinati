@@ -19,10 +19,10 @@
 ****************************************************************************)
 exception TranslationError
 
-module Translation (Translator : Translators.TRANSLATOR) =
+module Translate (Translation : Translators.TRANSLATION) =
 struct
-  let defaultTypes =
-    if !Options.typeEmbeddingOptimization then
+  let default_types =
+    if !Options.type_embedding_optimization then
       [
         Lp.Type("type", 0)
       ]
@@ -32,27 +32,19 @@ struct
         Lp.Type("type", 0)
       ]
   
-  let defaultConstants =
-    if !Options.typeEmbeddingOptimization then
+  let default_constants =
+    if !Options.type_embedding_optimization then
       []
     else
       let obj = Lp.IdType("object") in
       let ty = Lp.IdType("type") in
       [
-        Lp.Constant("istype", Lp.arrowType [ty] Lp.predicateType);
-        Lp.Constant("hastype", Lp.arrowType [obj; ty] Lp.predicateType)
+        Lp.Constant("istype", Lp.arrow_type [ty] Lp.predicate_type);
+        Lp.Constant("hastype", Lp.arrow_type [obj; ty] Lp.predicate_type)
       ]
+      
+  let default_terms = []
   
-  (**********************************************************************
-  *term_of_contextitem:
-  * Wraps up terms so that they can be elided completely if they
-  * are equal to top.
-  **********************************************************************)
-  let term_of_contextitem c =
-    match Translator.term_of_contextitem c with
-      | Some c' ->  Lp.elide (Lp.normalize c')
-      | None -> None
-
   (**********************************************************************
   *translate:
   * Translate LF specifications into a Lambda Prolog signature and module.
@@ -60,22 +52,22 @@ struct
   let rec translate name twelf =
     match twelf with
       Twelf.Specification(c, d) ->
-        let contextTypes = Util.choose Translator.type_of_contextitem c in
-        let contextConstants = Util.choose Translator.constant_of_contextitem c in
-        let contextTerms = Util.choose term_of_contextitem c in
+        let context_types = Util.choose Translation.type_of_contextitem c in
+        let context_constants = Util.choose Translation.constant_of_contextitem c in
+        let context_terms = Util.choose Translation.term_of_contextitem c in
         
-        let declarationTypes = Util.choose Translator.type_of_declaration d in
-        let declarationConstants = Util.choose Translator.constant_of_declaration d in
-        let declarationTerms = Util.choose Translator.term_of_declaration d in
+        let declaration_types = Util.choose Translation.type_of_declaration d in
+        let declaration_constants = Util.choose Translation.constant_of_declaration d in
+        let declaration_terms = Util.choose Translation.term_of_declaration d in
        
-        let allTypes = contextTypes @ declarationTypes @ Translator.defaultTypes in
-        let allConstants = contextConstants @ declarationConstants @ Translator.defaultConstants in
-        let allTerms = contextTerms @ declarationTerms @ Translator.defaultTerms in
+        let all_types = context_types @ declaration_types @ default_types in
+        let all_constants = context_constants @ declaration_constants @ default_constants in
+        let all_terms = context_terms @ declaration_terms @ default_terms in
         
-        let s = Lp.Signature(allTypes, allConstants) in
-        let m = Lp.Module(List.map (fun t -> Lp.Term(t)) allTerms) in
+        let s = Lp.Signature(all_types, all_constants) in
+        let m = Lp.Module(List.map (fun t -> Lp.Term(t)) all_terms) in
 
-        if !Errormsg.anyErrors then
+        if !Errormsg.any_errors then
           None
         else
           Some (Lp.Program(name, s, m))
@@ -84,13 +76,11 @@ end
 let translate name twelf =
   match !Options.translation with
     | Options.Original ->
-        let module T = Translation(Translators.OriginalTranslation) in
+        let module T = Translate(Translators.OriginalTranslation) in
         T.translate name twelf
     | Options.Simplified ->
-        let module T = Translation(Translators.SimplifiedTranslation) in
+        let module T = Translate(Translators.SimplifiedTranslation) in
         T.translate name twelf
     | Options.Optimized ->
-       let module T = Translation(Translators.OptimizedTranslation) in
+       let module T = Translate(Translators.OptimizedTranslation) in
         T.translate name twelf
-    | _ ->
-        Errormsg.impossible Errormsg.none ("invalid translator " ^ name)

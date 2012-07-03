@@ -18,60 +18,56 @@
 * along with Parinati.  If not, see <http://www.gnu.org/licenses/>.
 **********************************************************************)
 (**********************************************************************
-*Translators:
+*Translations:
 * Implementations of the various translations described in
 * "Realizing Dependently Typed Logic Programming", Zachary Snow 2010;
 * references in this file are to this document.
 **********************************************************************)
 exception TranslationError
 
-module type TRANSLATOR =
-sig
-  val translate_positive : Twelf.assertion -> Lp.tern
-  val translate_negative : Twelf.term -> Lp.term
-end
-
-(*  Name generation.  *)
-let counter = ref 0
-let generateName () =
-  (incr counter;
-  "V" ^ (string_of_int (!counter)))
+(*  Name generation for going under LF implications.  *)
+let generate_name =
+  let counter = ref 0 in
+  fun () ->
+	  (incr counter;
+	  "V" ^ (string_of_int (!counter)))
 
 (**********************************************************************
-*encodeKind:
+*encode_kind:
 * Encodes the LF kind Type as a lambdaProlog type; see Figure 4.1.
 **********************************************************************)
-let encodeKind k =
+let encode_kind k =
   match k with
     | Twelf.Type(_) ->
-        if !Options.typeEmbeddingOptimization then
-          Lp.predicateType
+        if !Options.type_embedding_optimization then
+          Lp.predicate_type
         else
-          Lp.idType "type"
+          Lp.id_type "type"
     | _ ->
-        (Errormsg.error pos ("invalid kind: " ^ Twelf.string_of_term ty));
+        let pos = Twelf.get_term_pos k in
+        (Errormsg.error pos ("invalid kind: " ^ Twelf.string_of_term k);
         raise TranslationError)
 
 (**********************************************************************
-*encodeType:
+*encode_type:
 * Encodes an LF type as a lambdaProlog term; see Figure 4.1.
 **********************************************************************)  
-let encodeType ty =
-  let encodeBaseType s =
-    if !Options.typeEmbeddingOptimization then
-      Lp.idType (s ^ "-type")
+let rec encode_type ty =
+  let encode_base_type s =
+    if !Options.type_embedding_optimization then
+      Lp.id_type (s ^ "-type")
     else
-      Lp.idType "object"
+      Lp.id_type "object"
   in
   
   match ty with
-      Twelf.IdTerm(x,_) -> encodeBaseType x
-    | Twelf.Type(_) -> encodeKind ty
+      Twelf.IdTerm(x,_) -> encode_base_type x
+    | Twelf.Type(_) -> encode_kind ty
     
     | Twelf.PiTerm(_,l,r,_)
-    | Twelf.ImplicationTerm(l,r,_) -> Lp.ArrowType(encodeType l, encodeType r)
+    | Twelf.ImplicationTerm(l,r,_) -> Lp.ArrowType(encode_type l, encode_type r)
     
-    | Twelf.ApplicationTerm(l,r,_) -> encodeType l  (*  Only care about simple types? *)
+    | Twelf.ApplicationTerm(l,r,_) -> encode_type l  (*  Only care about simple types? *)
     
     | Twelf.AbstractionTerm(_, _, _, pos) ->
         (Errormsg.error pos
@@ -79,17 +75,17 @@ let encodeType ty =
         raise TranslationError)
 
 (**********************************************************************
-*encodeTerm:
+*encode_term:
 * Encodes an LF term as a lambdaProlog term; see Figure 4.2.
 **********************************************************************)
-let rec encodeTerm t =
+let rec encode_term t =
   match t with
-      Twelf.IdTerm(s,_) ->
+    | Twelf.IdTerm(s,_) ->
         Lp.IdTerm(s)
     | Twelf.ApplicationTerm(l,r,_) ->
-        Lp.ApplicationTerm(encodeTerm l, [encodeTerm r])
+        Lp.ApplicationTerm(encode_term l, [encode_term r])
     | Twelf.AbstractionTerm(v,_,t,_) ->
-        Lp.AbstractionTerm(v, encodeTerm t)
+        Lp.AbstractionTerm(v, encode_term t)
     | _ ->
         let pos = Twelf.get_term_pos t in
         let () = Errormsg.error pos
@@ -111,17 +107,17 @@ let is_type t =
 let has_type term ty pos =
   let h = "has_type" in
   
-  if !Options.typeEmbeddingOptimization then
+  if !Options.type_embedding_optimization then
     let make_app tyHead tyArgs proofTerm =
-      if !Options.noProofTermsOptimization then
+      if !Options.proof_terms_optimization then
         Lp.ApplicationTerm(Lp.IdTerm(tyHead), tyArgs)
-      else if !Options.indexingOptimization then
+      else if !Options.indexing_optimization then
         Lp.ApplicationTerm(Lp.IdTerm(tyHead), tyArgs @ [proofTerm])
       else
         Lp.ApplicationTerm(Lp.IdTerm(tyHead), proofTerm :: tyArgs)
     in
     
-    let r = Lp.getTypeHeadAndArgs ty in
+    let r = Lp.head_and_argument_terms ty in
     if Util.is_some r then
       let (head, args) = Util.get r in
       make_app head args term
@@ -130,143 +126,64 @@ let has_type term ty pos =
         ("type has invalid head: " ^ (Lp.string_of_term ty));
       raise TranslationError)
   
-  else if !Options.noProofTermsOptimization then
+  else if !Options.proof_terms_optimization then
     Lp.ApplicationTerm(Lp.IdTerm(h), [ty])
   
-  else if !Options.indexingOptimization then
+  else if !Options.indexing_optimization then
     Lp.ApplicationTerm(Lp.IdTerm(h), [ty; term])
   
   else
     Lp.ApplicationTerm(Lp.IdTerm(h), [term; ty])
 
 (**********************************************************************
-* Many of these depend on being given a Translator.translate_positive,
-* and so could live in Translate...
+*Translators:
+* The essential differences in the translations can be captured by
+* how LF assertions are translated positively and negatively.
 **********************************************************************)
-let type_of_contextitem c =
-    match c with
-      | Twelf.Assertion(Twelf.IdTerm(n,_),ty,pos) ->
-          if !Options.typeEmbeddingOptimization then
-	          (try
-	            let lpType = encodeType ty in
-	            let targetType = Lp.targetType lpType in
-	            match targetType with
-	              | Lp.IdType(_) when targetType = Lp.predicateType ->
-	                  Some(Lp.Type(n ^ "-type", 0))
-	              | _ -> None
-	          with
-	            TranslationError -> None)
-          else
-            None
-      | _ -> None
+module type TRANSLATOR =
+sig
+  val translate_positive : Twelf.assertion -> Lp.term
+  val translate_negative : Twelf.assertion -> Lp.term
+end
 
-let term_of_contextitem translate_positive assertion =
-  translate_positive assertion
-
-let term_of_declaration translate_negative dec =
-  match dec with
-    | Twelf.Solve(n, t, pos) ->
-        let vars = Twelf.freeVariables t in
-        let returnVar = "_" ^ n in (* Force a universal.  *)
-        let vars' =
-          List.map
-            (fun s -> Lp.IdTerm(s))
-            (returnVar :: vars)
-        in
-
-        let assertion = Twelf.Assertion(Twelf.IdTerm(returnVar, pos), t, pos) in
-        let term = 
-          Lp.ImplicationTerm(
-            translate_negative assertion,
-            Lp.ApplicationTerm(Lp.IdTerm(n), vars')
-          )
-        in
-        Lp.normalize term
-    | Twelf.Domain(n, pos) ->
-        Errormsg.impossible pos "domains aren't implemented!"
-
-let constant_of_contextitem c =
-    match c with
-      | Twelf.Assertion(Twelf.IdTerm(n,_),ty,_) ->
-          (try
-            if !Options.typeEmbeddingOptimization then
-              let idf s = Lp.idType (s ^ "-type") in
-	            let tf = Lp.predicateType in
-		          let lpType = translateType idf tf ty in
-		
-		          let targetType = Lp.targetType lpType in
-		          match targetType with
-		            | Lp.IdType(_) when targetType = Lp.predicateType ->
-		                if !Options.noProofTermsOptimization then
-		                  Some(Lp.Constant(n, lpType))
-		                else if !Options.indexingOptimization then
-		                  let argumentTypes = Lp.argumentTypes lpType in
-		                  let lpType' = Lp.arrowType (argumentTypes @ [idf n]) Lp.predicateType in
-		                  Some(Lp.Constant(n, lpType'))
-		                else
-		                  let lpType' = Lp.arrowType [idf n] lpType in
-		                  Some(Lp.Constant(n, lpType'))
-		            | Lp.IdType(tf) ->
-		                let argumentTypes = Lp.argumentTypes lpType in
-		                Some(Lp.Constant(n, Lp.arrowType argumentTypes (Lp.idType tf)))
-		            | _ ->
-		                (Errormsg.error pos ("invalid target type: " ^ (Lp.string_of_type targetType));
-		                Errormsg.error pos ("invalid context item type: " ^ (Twelf.string_of_term ty));
-		                None)
-            else
-              Some(Lp.Constant(n, encodeType ty))
-          with
-            TranslationError -> None)
-      | Twelf.Assertion(_, _, pos) ->
-          (Errormsg.error pos
-            ("invalid context item: " ^ (Twelf.string_of_contextitem c));
-          None)
-
-let constant_of_declaration dec =
-  match dec with
-    | Twelf.Solve(n,t,_) ->
-        let vars = Twelf.freeVariables t in
-        let ty = Lp.arrowType (List.map Lp.idType ("Term" :: vars)) Lp.predicateType in
-        Some (Lp.Constant(n, ty))
-    | Twelf.Domain(_,_) -> None
 
 (**********************************************************************
-*OriginalTranslation:
+*OriginalTranslator:
 * Just the original translation.
 **********************************************************************)
-module OriginalTranslation = 
+module OriginalTranslator = 
 struct
   (********************************************************************
   *translate_positive:
   * Translates an LF context item to an LP term.
   ********************************************************************)
   let rec translate_positive assertion =
-    let translateAbstractionType x a p q pos =
+    let translate_abstraction_type x a p q pos =
       let r = Twelf.Assertion(p, q, pos) in
       let r' = translate_positive r in    
       let l = Twelf.Assertion(Twelf.IdTerm(x, pos), a, pos) in
       let l' = translate_positive l in
-      Lp.forAll x (Lp.implies l' r')
+      Lp.for_all x (Lp.implies l' r')
     in
 
     match assertion with
         Twelf.Assertion(Twelf.AbstractionTerm(x, a, p, _), Twelf.PiTerm(x', a', q, _), pos) ->
           if x = x' && a = a' then
-            translateAbstractionType x a p q pos
+            translate_abstraction_type x a p q pos
           else
             (Errormsg.error pos "invalid quantification variable or type";
             raise TranslationError)
       | Twelf.Assertion(p, Twelf.PiTerm(x, a, q, _), pos) ->
           let p' = Twelf.ApplicationTerm(p, Twelf.IdTerm(x, pos), pos) in
-          translateAbstractionType x a p' q pos
+          translate_abstraction_type x a p' q pos
       | Twelf.Assertion(p, Twelf.ImplicationTerm(a, q, _), pos) ->
-          let x = generateName () in
+          let x = generate_name () in
           let p' = Twelf.ApplicationTerm(p, Twelf.IdTerm(x, pos), pos) in
-          translateAbstractionType x a p' q pos
+          translate_abstraction_type x a p' q pos
       | Twelf.Assertion(a, Twelf.Type(_), _) ->
-          is_type (encodeTerm a)
+          is_type (encode_term a)
       | Twelf.Assertion(term, ty, pos) ->
-          has_type (encodeTerm term) (encodeTerm ty) pos
+          has_type (encode_term term) (encode_term ty) pos
       
   (**********************************************************************
   *translate_negative:
@@ -276,7 +193,7 @@ struct
     let translateAbstraction x a r pos =
       let l' = translate_positive (Twelf.Assertion(Twelf.IdTerm(x, pos), a, pos)) in
       let r' = translate_negative r in
-      Lp.forAll x (Lp.implies l' r')
+      Lp.for_all x (Lp.implies l' r')
     in
 
     match assertion with
@@ -298,49 +215,49 @@ struct
           let r = translateAbstraction x a (Twelf.Assertion(b, ty, pos)) pos in
           Lp.ConjunctionTerm(l, r)
       | Twelf.Assertion(a, Twelf.Type(_), pos) ->
-          is_type (encodeTerm a)
+          is_type (encode_term a)
       | Twelf.Assertion(term, ty, pos) ->
-          has_type (encodeTerm term) (encodeTerm ty) pos
+          has_type (encode_term term) (encode_term ty) pos
 end
 
 (**********************************************************************
-*SimplifiedTranslation:
+*SimplifiedTranslator:
 * The simplified translation.
 **********************************************************************)
-module SimplifiedTranslation = 
+module SimplifiedTranslator = 
 struct
   (********************************************************************
   *translate:
   * Translates an LF context item or judgment to an LP term.
   ********************************************************************)
   let rec translate assertion =
-    (*  translateAbstractionType: *)
-    let translateAbstractionType x a p q pos =
+    (*  translate_abstraction_type: *)
+    let translate_abstraction_type x a p q pos =
       let r = Twelf.Assertion(p, q, pos) in
       let r' = translate r in    
       let l = Twelf.Assertion(Twelf.IdTerm(x, pos), a, pos) in
       let l' = translate l in
-      Lp.forAll x (Lp.implies l' r')
+      Lp.for_all x (Lp.implies l' r')
     in
 
     match assertion with
         Twelf.Assertion(Twelf.AbstractionTerm(x, a, p, _), Twelf.PiTerm(x', a', q, _), pos) ->
           if x = x' && a = a' then
-            translateAbstractionType x a p q pos
+            translate_abstraction_type x a p q pos
           else
             (Errormsg.error pos "invalid quantification variable or type";
             raise TranslationError)
       | Twelf.Assertion(p, Twelf.PiTerm(x, a, q, _), pos) ->
           let p' = Twelf.ApplicationTerm(p, Twelf.IdTerm(x, pos), pos) in
-          translateAbstractionType x a p' q pos
+          translate_abstraction_type x a p' q pos
       | Twelf.Assertion(p, Twelf.ImplicationTerm(a, q, _), pos) ->
-          let x = generateName () in
+          let x = generate_name () in
           let p' = Twelf.ApplicationTerm(p, Twelf.IdTerm(x, pos), pos) in
-          translateAbstractionType x a p' q pos
+          translate_abstraction_type x a p' q pos
       | Twelf.Assertion(a, Twelf.Type(_), _) ->
-          is_type (encodeTerm a)
+          is_type (encode_term a)
       | Twelf.Assertion(term, ty, pos) ->
-          has_type (encodeTerm term) (encodeTerm ty) pos
+          has_type (encode_term term) (encode_term ty) pos
 
   let translate_positive = translate
   let translate_negative = translate
@@ -363,10 +280,11 @@ let rec is_rigid term binders =
       raise TranslationError)
 
 (******************************************************************
-*collectRigidVariables:
+*collect_rigid_variables:
 * Given a list of binders and a term, returns a list of variables
 * that are used rigidly in the term.  This list is a sublist of
 * the given binders.
+* TODO: this is broken!
 ******************************************************************)
 let rec collect_rigid_variables binders term =
   let rec collect rhs term =
@@ -394,30 +312,30 @@ let rec collect_rigid_variables binders term =
   collect true term
 
 (**********************************************************************
-*OptimizedTranslation:
+*OptimizedTranslator:
 * The optimized translation.
 **********************************************************************)
-module OptimizedTranslation =
+module OptimizedTranslator =
 struct
   (********************************************************************
   *translate_positive:
   * Translates an LF context item to an LP term.
   ********************************************************************)
-  let rec translate_positive binders i =
-    (*  translateAbstractionType: *)
+  let rec translate_positive binders assertion =
+    (*  translate_abstraction_type: *)
     let translateAbstraction x a p q pos =
       let binders' = x :: binders in
       let r = Twelf.Assertion(p, q, pos) in
       let (r', rigidVariables) = translate_positive binders' r in  
       if List.mem x rigidVariables then
-        (Lp.forAll x r', rigidVariables)
+        (Lp.for_all x r', rigidVariables)
       else
         let l = Twelf.Assertion(Twelf.IdTerm(x, pos), a, pos) in
         let (l', _) = translate_positive binders' l in
-        (Lp.forAll x (Lp.implies l' r'), rigidVariables)
+        (Lp.for_all x (Lp.implies l' r'), rigidVariables)
     in
 
-    match i with
+    match assertion with
         Twelf.Assertion(Twelf.AbstractionTerm(x, a, p, _), Twelf.PiTerm(x', a', q, _), pos) ->
           if x = x' && a = a' then
             translateAbstraction x a p q pos
@@ -428,14 +346,14 @@ struct
           let p' = Twelf.ApplicationTerm(p, Twelf.IdTerm(x, pos), pos) in
           translateAbstraction x a p' q pos
       | Twelf.Assertion(p, Twelf.ImplicationTerm(a, q, _), pos) ->
-          let x = generateName () in
+          let x = generate_name () in
           let p' = Twelf.ApplicationTerm(p, Twelf.IdTerm(x, pos), pos) in
           translateAbstraction x a p' q pos
       | Twelf.Assertion(a, Twelf.Type(_), _) ->
-          (is_type (encodeTerm a), [])
+          (is_type (encode_term a), [])
       | Twelf.Assertion(term, ty, pos) ->
-          let rigidVariables = collectRigidVariables binders ty in
-          (has_type (encodeTerm term) (encodeTerm ty) pos, rigidVariables)
+          let rigidVariables = collect_rigid_variables binders ty in
+          (has_type (encode_term term) (encode_term ty) pos, rigidVariables)
 
   (**********************************************************************
   *translate_negative:
@@ -445,7 +363,7 @@ struct
     let translate_abstraction x a r pos =
       let (l',_) = translate_positive binders (Twelf.Assertion(Twelf.IdTerm(x, pos), a, pos)) in
       let r' = translate_negative (x :: binders) r in
-      Lp.forAll x (Lp.implies l' r')
+      Lp.for_all x (Lp.implies l' r')
     in
 
     match j with
@@ -467,15 +385,122 @@ struct
           let r = translate_abstraction x a (Twelf.Assertion(b, Twelf.Type(pos), pos)) pos in
           Lp.ConjunctionTerm(l, r)
       | Twelf.Assertion(a, Twelf.Type(_), pos) ->
-          is_type (encodeTerm a)
+          is_type (encode_term a)
       | Twelf.Assertion(term, ty, pos) ->
-          has_type (encodeTerm term) (encodeTerm ty) pos
+          has_type (encode_term term) (encode_term ty) pos
 
   let translate_positive a =
     let (t, _) = translate_positive [] a in
     t
 
-  let translate_positive a =
-    let (t, _) = translate_positive [] a in
-    t
+  let translate_negative a = translate_negative [] a
+
 end
+
+module type TRANSLATION =
+sig
+  val type_of_contextitem : Twelf.assertion -> Lp.lptype option
+  val type_of_declaration : Twelf.declaration -> Lp.lptype option
+
+  val constant_of_contextitem : Twelf.assertion -> Lp.constant option
+  val constant_of_declaration : Twelf.declaration -> Lp.constant option
+  
+  val term_of_contextitem : Twelf.assertion -> Lp.term option
+  val term_of_declaration : Twelf.declaration -> Lp.term option
+end
+  
+module Translation(Translator: TRANSLATOR) =
+struct
+    let type_of_contextitem c =
+      if not !Options.type_embedding_optimization then
+        None
+      else
+          match c with
+            | Twelf.Assertion(Twelf.IdTerm(n,_),ty,pos) ->
+                (try
+                   let lp_type = encode_type ty in
+                   let target_type = Lp.target_type lp_type in
+                   if target_type = Lp.predicate_type then
+                     Some(Lp.Type(n ^ "-type", 0))
+                   else
+                    None
+                 with
+                   TranslationError -> None)
+              | _ -> None
+    
+    let type_of_declaration assertion =
+      None
+    
+    let term_of_contextitem assertion =
+      Lp.elide (Lp.normalize (Translator.translate_positive assertion))
+    
+    let term_of_declaration dec =
+      match dec with
+        | Twelf.Solve(n, t, pos) ->
+            let vars = Twelf.free_variables t in
+            let return_var = "_" ^ n in (* Force a universal.  *)
+            let vars' =
+              List.map
+                (fun s -> Lp.IdTerm(s))
+                (return_var :: vars)
+            in
+    
+            let assertion = Twelf.Assertion(Twelf.IdTerm(return_var, pos), t, pos) in
+            let term = 
+              Lp.ImplicationTerm(
+                Translator.translate_negative assertion,
+                Lp.ApplicationTerm(Lp.IdTerm(n), vars')
+              )
+            in
+            Lp.elide (Lp.normalize term)
+        | Twelf.Domain(n, pos) ->
+            Errormsg.impossible pos "domains aren't implemented!"
+    
+    let constant_of_contextitem c =
+        match c with
+          | Twelf.Assertion(Twelf.IdTerm(n,_) as n_type,ty,pos) ->
+              (try
+                if !Options.type_embedding_optimization then
+                  let name_type = encode_type n_type in
+                  let lp_type = encode_type ty in
+                  let target_type = Lp.target_type lp_type in
+                  match target_type with
+                    | Lp.IdType(_) when target_type = Lp.predicate_type ->
+                        if !Options.proof_terms_optimization then
+                          Some(Lp.Constant(n, lp_type))
+                        else if !Options.indexing_optimization then
+                          let argument_types = Lp.argument_types lp_type in
+                          let lp_type' = Lp.arrow_type (argument_types @ [name_type]) Lp.predicate_type in
+                          Some(Lp.Constant(n, lp_type'))
+                        else
+                          let lp_type' = Lp.arrow_type [name_type] lp_type in
+                          Some(Lp.Constant(n, lp_type'))
+                    | Lp.IdType(tf) ->
+                        let argument_types = Lp.argument_types lp_type in
+                        Some(Lp.Constant(n, Lp.arrow_type argument_types (Lp.id_type tf)))
+                    | _ ->
+                        (Errormsg.error pos ("invalid target type: " ^ (Lp.string_of_type target_type));
+                        Errormsg.error pos ("invalid context item type: " ^ (Twelf.string_of_term ty));
+                        None)
+                else
+                  Some(Lp.Constant(n, encode_type ty))
+              with
+                TranslationError -> None)
+          | Twelf.Assertion(_, _, pos) ->
+              (Errormsg.error pos
+                ("invalid context item: " ^ (Twelf.string_of_contextitem c));
+              None)
+    
+    let constant_of_declaration dec =
+      match dec with
+        | Twelf.Solve(n,t,_) ->
+            let vars = Twelf.free_variables t in
+            let ty = Lp.arrow_type (List.map Lp.id_type ("Term" :: vars)) Lp.predicate_type in
+            Some (Lp.Constant(n, ty))
+        | Twelf.Domain(_,_) -> None
+end
+
+module OriginalTranslation = Translation(OriginalTranslator)
+module SimplifiedTranslation = Translation(SimplifiedTranslator)
+module OptimizedTranslation = Translation(OptimizedTranslator)
+
