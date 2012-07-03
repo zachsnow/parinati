@@ -1,5 +1,5 @@
 (****************************************************************************
-*Copyright 2008, 2009 Zach Snow
+* Copyright 2008-2012 Zach Snow
 ****************************************************************************)
 (****************************************************************************
 * This file is part of Parinati.
@@ -21,6 +21,28 @@ exception TranslationError
 
 module Translation (Translator : Translators.TRANSLATOR) =
 struct
+  let defaultTypes =
+    if !Options.typeEmbeddingOptimization then
+      [
+        Lp.Type("type", 0)
+      ]
+    else
+      [
+        Lp.Type("object", 0);
+        Lp.Type("type", 0)
+      ]
+  
+  let defaultConstants =
+    if !Options.typeEmbeddingOptimization then
+      []
+    else
+      let obj = Lp.IdType("object") in
+      let ty = Lp.IdType("type") in
+      [
+        Lp.Constant("istype", Lp.arrowType [ty] Lp.predicateType);
+        Lp.Constant("hastype", Lp.arrowType [obj; ty] Lp.predicateType)
+      ]
+  
   (**********************************************************************
   *term_of_contextitem:
   * Wraps up terms so that they can be elided completely if they

@@ -19,24 +19,24 @@
 **********************************************************************)
 exception TranslationError
 
+type translator : Twelf.assertion -> Lp.term
+
 module type TRANSLATOR =
 sig
-  val type_of_contextitem : Twelf.assertion -> Lp.lptype option
-  val type_of_declaration : Twelf.declaration -> Lp.lptype option
-
-  val constant_of_contextitem : Twelf.assertion -> Lp.constant option
-  val constant_of_declaration : Twelf.declaration -> Lp.constant option
-  
-  val term_of_contextitem : Twelf.assertion -> Lp.term option
-  val term_of_declaration : Twelf.declaration -> Lp.term option
-  
-  val defaultTypes : Lp.lptype list
-  val defaultConstants : Lp.constant list
-  val defaultTerms : Lp.term list
+  val translate_positive : translator
+  val translate_negative : translator
 end
 
 module OriginalTranslation : TRANSLATOR
 module SimplifiedTranslation : TRANSLATOR
 module OptimizedTranslation : TRANSLATOR
 module ExtendedTranslation : TRANSLATOR
-module StrangeTranslation : TRANSLATOR
+
+val type_of_contextitem : translator -> Twelf.assertion -> Lp.lptype
+val type_of_declaration : translator -> Twelf.declaration -> Lp.lptype
+
+val constant_of_contextitem :
+val constant_of_declaration : 
+
+val term_of_contextitem : translator -> TTwelf.assertion -> Lp.term option
+val term_of_declaration : translator -> TTwelf.declaration -> Lp.term option
