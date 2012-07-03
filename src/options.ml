@@ -28,15 +28,21 @@ let version = "0.3.0"
 **********************************************************************)
 (* Optimization options *)
 let optimizations = ref false
-let typeEmbeddingOptimization = ref false
-let indexingOptimization = ref false
-let noProofTermsOptimization = ref false
+let type_embedding_optimization = ref false
+let indexing_optimization = ref false
+let proof_terms_optimization = ref false
 
-let setDefaultOptimizations () =
-  if !optimizations then
-    indexingOptimization := true
+let check_optimizations () =
+  (if !optimizations then
+    indexing_optimization := true
   else
-    ()
+    ();
+    
+  if !proof_terms_optimization && (not !type_embedding_optimization) then
+    Errormsg.error Errormsg.none ("proof term optimization may only be used type embedding optimization");
+  else
+    ())
+
 
 (**********************************************************************
 *Translations:
@@ -47,15 +53,10 @@ type translation =
   | Optimized
   
 let translation = ref Original
-let setTranslation s =
-  (match s with
-    "original" -> translation := Original
+let set_translation s =
+  match s with
+  | "original" -> translation := Original
   | "simplified" -> translation := Simplified
   | "optimized" -> translation := Optimized
   | _ ->
-    Errormsg.error Errormsg.none ("invalid translation: " ^ s);
-  
-  (* Why? *)
-  if !noProofTermsOptimization && !translation <> Extended then
-    Errormsg.error Errormsg.none ("proof term optimization may only be used with the extended translation");
-  ())
+    Errormsg.error Errormsg.none ("invalid translation: " ^ s)

@@ -23,11 +23,11 @@ val version : string
 * Optimizations:
 **********************************************************************)
 val optimizations : bool ref
-val typeEmbeddingOptimization : bool ref
-val indexingOptimization : bool ref
-val noProofTermsOptimization : bool ref
+val type_embedding_optimization : bool ref
+val indexing_optimization : bool ref
+val proof_terms_optimization : bool ref
 
-val setDefaultOptimizations : unit -> unit
+val check_optimizations : unit -> unit
 
 (**********************************************************************
 * Translation:
@@ -38,4 +38,4 @@ type translation =
   | Optimized
 
 val translation : translation ref
-val setTranslation : string -> unit
+val set_translation : string -> unit
