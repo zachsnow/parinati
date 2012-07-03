@@ -130,7 +130,6 @@ arrow_term
 prefix_term
   : LBRACE ID COLON term RBRACE prefix_term  {Twelf.PiTerm($2, $4, $6, getPos 1)}
   | LBRACK ID COLON term RBRACK prefix_term  {Twelf.AbstractionTerm($2, $4, $6, getPos 1)}
-  | LANGLE ID COLON term RANGLE prefix_term  {Twelf.AlephTerm($2, $4, $6, getPos 1)}
   | arrow_term                               {$1}
   ;
 
