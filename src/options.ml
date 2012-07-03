@@ -39,7 +39,7 @@ let check_optimizations () =
     ();
     
   if !proof_terms_optimization && (not !type_embedding_optimization) then
-    Errormsg.error Errormsg.none ("proof term optimization may only be used type embedding optimization");
+    Errormsg.error Errormsg.none ("proof term optimization may only be used type embedding optimization")
   else
     ())
 
