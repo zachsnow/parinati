@@ -1,5 +1,5 @@
 (**********************************************************************
-*Copyright 2008, 2009 Zach Snow
+* Copyright 2008-2012 Zach Snow
 **********************************************************************)
 (**********************************************************************
 * This file is part of Parinati.
@@ -43,11 +43,13 @@ let anyErrors = ref false
 *  An empty pos, useful when printing internal compiler errors that
 *  are unrelated to a particular file or location.
 ********************************************************************)
-let none = { pos_fname = "none" ;
-             pos_lnum = 0 ;
-             pos_bol = 0 ;
-             pos_cnum = 0 }
-  
+let none = {
+  pos_fname = "none" ;
+  pos_lnum = 0 ;
+  pos_bol = 0 ;
+  pos_cnum = 0
+}
+
 (**********************************************************************
 *string_of_pos:
 * Produces a human-readable representation of a position.
@@ -90,7 +92,7 @@ let reset () = anyErrors := false
 let impossible pos msg =
   (anyErrors := true;
   printPosition pos "Internal Error";
-  prerr_string msg; 
+  prerr_string msg;
   prerr_newline ();
   flush stderr;
   raise InternalError)
@@ -125,7 +127,7 @@ let warning pos msg =
     prerr_newline ();
     flush stderr)
   else
-    ()    
+    ()
 
 (**********************************************************************
 *log:

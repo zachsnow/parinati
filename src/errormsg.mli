@@ -1,5 +1,5 @@
 (**********************************************************************
-*Copyright 2008, 2009 Zach Snow
+* Copyright 2008-2012 Zach Snow
 **********************************************************************)
 (**********************************************************************
 * This file is part of Parinati.
@@ -31,7 +31,7 @@ val warningsEnabled : bool ref
 val loggingEnabled : bool ref
 val warningsAsErrors : bool ref
 
-val impossible : pos -> string -> 'a 
+val impossible : pos -> string -> 'a
 val error : pos -> string -> unit
 val warning : pos -> string -> unit
 val log : pos -> string -> unit
