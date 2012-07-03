@@ -33,7 +33,6 @@ and term =
   | ApplicationTerm of term * term * pos
   | ImplicationTerm of term * term * pos
   | PiTerm of string * term * term * pos
-  | AlephTerm of string * term * term * pos
   | Type of pos
 
 val getContextItemPos : contextitem -> pos

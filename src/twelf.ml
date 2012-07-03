@@ -20,9 +20,9 @@
 type pos = Errormsg.pos
 type absyn = Specification of contextitem list * declaration list
 
-and contextitem = assertion
 and assertion = Assertion of term * term * pos
 
+and contextitem = assertion
 and declaration =
     Solve of string * term * pos
   | Domain of string * pos
@@ -33,7 +33,6 @@ and term =
   | ApplicationTerm of term * term * pos
   | ImplicationTerm of term * term * pos
   | PiTerm of string * term * term * pos
-  | AlephTerm of string * term * term * pos
   | Type of pos
 
 let getContextItemPos (Assertion(_,_,p)) = p
@@ -48,7 +47,6 @@ let getTermPos t = match t with
   | ApplicationTerm(_,_,p)
   | ImplicationTerm(_,_,p)
   | PiTerm(_,_,_,p)
-  | AlephTerm(_,_,_,p)
   | Type(p) -> p
 
 (**********************************************************************
@@ -63,8 +61,7 @@ let rec string_of_term t =
     | AbstractionTerm(_)
     | ApplicationTerm(_)
     | ImplicationTerm(_)
-    | PiTerm(_)
-    | AlephTerm(_) -> true
+    | PiTerm(_) -> true
   in
   let parens t =
     let s = string_of_term t in
@@ -79,8 +76,6 @@ let rec string_of_term t =
         "[" ^ s ^ " : " ^ (string_of_term t1) ^ "] "^ (string_of_term t2)
     | PiTerm(s,t1,t2,_) ->
         "{" ^ s ^ " : " ^ (string_of_term t1) ^ "} "^ (string_of_term t2)
-    | AlephTerm(s,t1,t2,_) ->
-        "<" ^ s ^ " : " ^ (string_of_term t1) ^ "> "^ (string_of_term t2)
     | ApplicationTerm(t1,t2,_) -> (string_of_term t1) ^ " " ^ (parens t2)
     | ImplicationTerm(t1, t2,_) -> (string_of_term t1) ^ " -> " ^ (string_of_term t2)
     | Type(_) -> "type"
@@ -125,8 +120,7 @@ let freeVariables t =
           let rvars = unbound binders r in
           lvars @ rvars
       | AbstractionTerm(n, ty, term,_)
-      | PiTerm(n, ty, term,_)
-      | AlephTerm(n, ty, term,_) ->
+      | PiTerm(n, ty, term,_) ->
           let tyvars = unbound binders ty in
           let termvars = unbound (n::binders) term in
           tyvars @ termvars
@@ -147,8 +141,7 @@ let typecheck (Specification(items, judgments)) =
       | ImplicationTerm(l,r,_) ->
           (checkTerm bvs l) && (checkTerm bvs r)
       | AbstractionTerm(n, ty, term, _)
-      | PiTerm(n, ty, term, _)
-      | AlephTerm(n, ty, term, _) ->
+      | PiTerm(n, ty, term, _) ->
           (checkTerm bvs ty) && (checkTerm (n::bvs) term)
       | Type(_) -> true
   in
