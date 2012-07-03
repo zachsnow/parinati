@@ -1,5 +1,5 @@
 (**********************************************************************
-*Copyright 2008, 2009 Zach Snow
+* Copyright 2008-2012 Zach Snow
 **********************************************************************)
 (**********************************************************************
 * This file is part of Parinati.
@@ -23,6 +23,7 @@ val version : string
 * Optimizations:
 **********************************************************************)
 val optimizations : bool ref
+val typeEmbeddingOptimization : bool ref
 val indexingOptimization : bool ref
 val noProofTermsOptimization : bool ref
 
