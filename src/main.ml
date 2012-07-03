@@ -76,6 +76,7 @@ let parseArguments () =
     ("--opt", Arg.Set(Options.optimizations), "enable default optimizations");
     ("--opt-index", Arg.Set(Options.indexingOptimization), "enable indexing order optimization");
     ("--opt-pts", Arg.Set(Options.noProofTermsOptimization), "enable proof term erasure optimization");
+    ("--opt-type", Arg.Set(Options.typeEmbeddingOptimization), "enable type embedding optimization");
     
     ("--log", Arg.Set(Errormsg.loggingEnabled), "enable logging information");
     ("--version", Arg.Unit(printVersion), "show version information")]

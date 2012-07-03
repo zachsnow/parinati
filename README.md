@@ -55,6 +55,7 @@ General Usage
         --opt enable default optimizations
         --opt-index enable indexing order optimization
         --opt-pts enable proof term erasure optimization
+        --opt-types enable type embedding optimization
         --log enable logging information
         --version show version information
         -help  Display this list of options
