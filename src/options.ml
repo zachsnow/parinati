@@ -34,7 +34,8 @@ let proof_terms_optimization = ref false
 
 let check_optimizations () =
   (if !optimizations then
-    indexing_optimization := true
+    (indexing_optimization := true;
+    type_embedding_optimization := true)
   else
     ();
     
@@ -52,7 +53,7 @@ type translation =
   | Simplified
   | Optimized
   
-let translation = ref Original
+let translation = ref Optimized
 let set_translation s =
   match s with
   | "original" -> translation := Original
