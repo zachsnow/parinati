@@ -17,6 +17,8 @@
 * You should have received a copy of the GNU General Public License
 * along with Parinati.  If not, see <http://www.gnu.org/licenses/>.
 **********************************************************************)
+let version = "0.3.0"
+
 (**********************************************************************
 *Optimizations:
 * There are several available optimizations; the default ones are
@@ -24,24 +26,26 @@
 * set.  If 'optimizations' is not set, just the manually specified
 * optimizations are used.
 **********************************************************************)
-let version = "0.3.0"
-
 (* Optimization options *)
 let optimizations = ref false
+let typeEmbeddingOptimization = ref false
 let indexingOptimization = ref false
-let typeOptimization = ref false
 let noProofTermsOptimization = ref false
 
 let setDefaultOptimizations () =
-  ();
+  if !optimizations then
+    indexingOptimization := true
+  else
+    ()
 
-(* Translation options *)
+(**********************************************************************
+*Translations:
+**********************************************************************)
 type translation =
     Original
   | Simplified
   | Optimized
   | Extended
-  | Strange
   
 let translation = ref Original
 let setTranslation s =
@@ -50,11 +54,10 @@ let setTranslation s =
   | "simplified" -> translation := Simplified
   | "optimized" -> translation := Optimized
   | "extended" -> translation := Extended
-  | "strange" -> translation := Strange
   | _ ->
     Errormsg.error Errormsg.none ("invalid translation: " ^ s);
   
+  (* Why? *)
   if !noProofTermsOptimization && !translation <> Extended then
     Errormsg.error Errormsg.none ("proof term optimization may only be used with the extended translation");
-  
   ())
