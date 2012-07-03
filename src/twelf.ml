@@ -81,7 +81,7 @@ let rec string_of_term t =
     | Type(_) -> "type"
 
 (**********************************************************************
-*isUniversal:
+*is_universal:
 * Determines whether the name is possibly a universal variable (i.e.,
 * capitalized or '_').
 **********************************************************************)
@@ -106,11 +106,11 @@ let string_of_contextitem (Assertion(p,q,_)) =
 *freeVariables
 * Given a term, returns a list of all free variables in the term.
 **********************************************************************)
-let freeVariables t =
+let free_variables t =
   let rec unbound binders t =
     match t with
         IdTerm(n,_) ->
-          if (isUniversal n) && not (List.mem n binders) then
+          if (is_universal n) && not (List.mem n binders) then
             [n]
           else
             []
@@ -156,4 +156,4 @@ let typecheck (Specification(items, judgments)) =
         bvs)
   in
   let _ = List.fold_left check_context_item [] items in
-  not !Errormsg.anyErrors
+  not !Errormsg.any_errors
