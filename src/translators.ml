@@ -97,7 +97,10 @@ let rec encode_term t =
 * A constructor for kind assertions.
 **********************************************************************)
 let is_type t =
-  Lp.ApplicationTerm(Lp.IdTerm("is_type"), [t])
+  if !Options.type_embedding_optimization then
+    Lp.top
+  else
+      Lp.ApplicationTerm(Lp.IdTerm("istype"), [t])
 
 (**********************************************************************
 *has_type:
@@ -105,7 +108,7 @@ let is_type t =
 * the optimizations in effect.
 **********************************************************************)
 let has_type term ty pos =
-  let h = "has_type" in
+  let h = "hastype" in
   
   if !Options.type_embedding_optimization then
     let make_app tyHead tyArgs proofTerm =

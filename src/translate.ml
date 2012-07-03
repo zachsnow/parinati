@@ -23,9 +23,7 @@ module Translate (Translation : Translators.TRANSLATION) =
 struct
   let default_types =
     if !Options.type_embedding_optimization then
-      [
-        Lp.Type("type", 0)
-      ]
+      []
     else
       [
         Lp.Type("object", 0);
